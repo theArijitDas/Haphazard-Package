@@ -21,7 +21,7 @@ Thank you for your interest in contributing to **Haphazard**! This guide explain
 1. **Fork the repository**:
 
 ```bash
-git clone https://github.com/theArijitDas/haphazard.git
+git clone https://github.com/theArijitDas/Haphazard-Package
 cd haphazard
 ````
 
