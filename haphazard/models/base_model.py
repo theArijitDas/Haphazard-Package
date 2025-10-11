@@ -56,9 +56,9 @@ def validate_fit_output(func: Callable[..., dict[str, Any]]) -> Callable[..., di
 
             # Validate scalar types
             if not isinstance(output["time_taken"], float):
-                raise TypeError(f"'time_taken' must be a float, found {type(output["time_taken"])!r}")
+                raise TypeError(f"'time_taken' must be a float, found {type(output['time_taken'])!r}")
             if not isinstance(output["is_logit"], bool):
-                raise TypeError(f"'is_logit' must be a boolean, found {type(output["is_logit"])!r}")
+                raise TypeError(f"'is_logit' must be a boolean, found {type(output['is_logit'])!r}")
 
         elif dataset.task == "regression":
             # Required keys for regression output
@@ -71,13 +71,13 @@ def validate_fit_output(func: Callable[..., dict[str, Any]]) -> Callable[..., di
 
             # Validate array types
             if not isinstance(output["targets"], np.ndarray):
-                raise TypeError(f"'targets' must be a numpy ndarray, found {type(output["targets"])!r}")
+                raise TypeError(f"'targets' must be a numpy ndarray, found {type(output['targets'])!r}")
             if not isinstance(output["preds"], np.ndarray):
-                raise TypeError(f"'preds' must be a numpy ndarray, found {type(output["preds"])!r}")
+                raise TypeError(f"'preds' must be a numpy ndarray, found {type(output['preds'])!r}")
 
             # Validate scalar type
             if not isinstance(output["time_taken"], float):
-                raise TypeError(f"'time_taken' must be a float, found {type(output["time_taken"])!r}")
+                raise TypeError(f"'time_taken' must be a float, found {type(output['time_taken'])!r}")
 
         else:
             raise ValueError(f"Unknown dataset.task: {dataset.task}")

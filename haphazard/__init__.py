@@ -4,6 +4,9 @@ haphazard
 Top-level imports for main API access.
 """
 
+# Package version
+__version__ = "0.1.2"
+
 # User-facing APIs
 from .data import load_dataset
 from .models import load_model
