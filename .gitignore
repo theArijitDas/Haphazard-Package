@@ -1,6 +1,16 @@
 # Python
 **__pycache__/
+*.pyc
 **.ipynb
 
 # Virtual environments
 .venv/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info
+
+# Personal reference files
+*CHECKLIST.txt
+secrets.txt
