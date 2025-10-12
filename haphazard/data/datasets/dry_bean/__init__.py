@@ -1,7 +1,7 @@
 """
 haphazard.data.datasets.dry_bean
 --------------------------------
-This module implements a dry_bean dataset
+Dry Bean dataset implementation for multi-class classification.
 """
 
 import numpy as np
@@ -17,28 +17,44 @@ from ....utils.file_utils import find_file
 @register_dataset("dry_bean")
 class DryBean(BaseDataset):
     """
-    DryBean Dataset
+    Dry Bean dataset for multi-class classification.
+
+    Attributes
+    ----------
+    name : str
+        Name of the dataset.
+    haphazard_type : str
+        Indicates dataset type, e.g., "controlled".
+    task : str
+        Task type, e.g., "classification".
+    num_classes : int
+        Number of unique output classes.
+
+    Notes
+    -----
+    - Class labels are mapped from strings to integers.
+    - Original dataset has ordered labels as follows:
+        Index         -> Label
+        0 to 2026     -> 0
+        2027 to 3348  -> 1
+        3349 to 3870  -> 2
+        3871 to 5500  -> 3
+        5501 to 7428  -> 4
+        7429 to 10064 -> 5
+        10065 to 13610 -> 6
+    - Data is shuffled for randomized experiments.
     """
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        DryBean dataset for multi-class classification.
+        Initialize the Dry Bean dataset instance.
 
-        Args:
-            base_path (str): Base path (default "./").
-        
-        Notes:
-        - Class labels are mapped from strings to integers.
-        - Original dataset has ordered labels as follows:
-            Index         -> Label
-            0 to 2026     -> 0
-            2027 to 3348  -> 1
-            3349 to 3870  -> 2
-            3871 to 5500  -> 3
-            5501 to 7428  -> 4
-            7429 to 10064 -> 5
-            10065 to 13610-> 6
-        - Data is shuffled for randomized experiments.
+        Parameters
+        ----------
+        base_path : str, default="./"
+            Base directory under which the dataset file is located.
+        **kwargs
+            Additional keyword arguments passed to the parent constructor.
         """
         self.name = "dry_bean"
         self.haphazard_type = "controlled"
@@ -46,27 +62,31 @@ class DryBean(BaseDataset):
         self.num_classes = 7
 
         super().__init__(base_path=base_path, **kwargs)
-    
-    def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
+
+    def read_data(self, base_path: str = "./") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load the dry_bean dataset.
+        Load and process the Dry Bean dataset.
 
-        Args:
-            base_path (str): Directory under which the dataset file is searched.
+        Parameters
+        ----------
+        base_path : str, default="./"
+            Directory under which the dataset file is searched.
 
-        Returns:
-            Tuple[NDArray[np.float64], NDArray[np.int64]]:
-                - x: Feature matrix of shape (n_samples, n_features) with dtype float64.
-                - y: Binary label vector of shape (n_samples,) with dtype int64.
+        Returns
+        -------
+        tuple[NDArray[np.float64], NDArray[np.int64]]
+            x : ndarray of shape (n_samples, n_features)
+                Feature matrix with dtype float64.
+            y : ndarray of shape (n_samples,)
+                Integer label vector with dtype int64.
         """
-        data_path: str = find_file(base_path, "Dry_Bean_Dataset.arff")
-
-        data, meta = arff.loadarff(data_path)
-        df: pd.DataFrame = pd.DataFrame(data)
+        data_path = find_file(base_path, "Dry_Bean_Dataset.arff")
+        data, _ = arff.loadarff(data_path)
+        df = pd.DataFrame(data)
 
         # Decode string labels and map to integers
         df["Class"] = df["Class"].str.decode("utf-8")
-        class_encoding: dict[str, int] = {
+        class_encoding = {
             "SEKER": 0,
             "BARBUNYA": 1,
             "BOMBAY": 2,
@@ -77,7 +97,7 @@ class DryBean(BaseDataset):
         }
         df["Class"] = df["Class"].map(class_encoding)
 
-        # Shuffle rows to randomize label order
+        # Shuffle rows for randomized experiments
         df = df.sample(frac=1.0, random_state=42)
 
         x = df.drop(columns=["Class"]).to_numpy(dtype=np.float64)
@@ -85,6 +105,5 @@ class DryBean(BaseDataset):
 
         return x, y
 
-__all__ = [
-    "DryBean"
-]
+
+__all__ = ["DryBean"]
