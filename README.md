@@ -153,7 +153,7 @@ outputs = model(dataset)
 (Considered to be the base version, ignore versions before this)
 
 - Includes models 'OLVF' and 'OLIFL' models natively.
-- Includes datasets 'Magic04', 'Dry Bean' and 'Gas'. (Does not include raw files to read from, plese use `base_path` argument to point to relevent path containing the raw files).
+- Includes datasets 'Magic04', 'Dry Bean' and 'Gas'. (Does not include raw files to read from, please use `base_path` argument to point to relevant  path containing the raw files).
 
 ---
 
