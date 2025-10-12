@@ -11,6 +11,7 @@ Provides a standardized interface for loading datasets and models, running exper
 - [Quick Start](#quick-start)
 - [Datasets](#datasets)
 - [Models](#models)
+- [Versions](#versions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -112,6 +113,13 @@ mask = dataset.load_mask(scheme="probabilistic", availability_prob=0.5)
 * `n_samples`, `n_features` : int.
 * `num_classes` : int (for classification).
 
+### Available Datasets (does not include raw files)
+
+* Dummy ("dummy"): For testing and prototyping.
+* Magic04 ("magic04"): Binary classification
+* Dry Bean ("dry_bean"): Multi-class classification
+* GAS ("gas"): Multi-class classification
+
 ---
 
 ## Models
@@ -131,6 +139,21 @@ outputs = model(dataset)
 
 * **Classification**: `labels`, `preds`, `logits`, `time_taken`, `is_logit`.
 * **Regression**: `targets`, `preds`, `time_taken`.
+
+### Available Models
+* Dummy ("dummy"): For testing and prototyping.
+* OLVF ("olvf"): Supports binary and multi-class classification.
+* OLIFL ("olifl"): Supports binary and multi-class classification.
+
+---
+## Versions
+
+### v1.0.0
+
+(Considered to be the base version, ignore versions before this)
+
+- Includes models 'OLVF' and 'OLIFL' models natively.
+- Includes datasets 'Magic04', 'Dry Bean' and 'Gas'. (Does not include raw files to read from, plese use `base_path` argument to point to relevent path containing the raw files).
 
 ---
 
