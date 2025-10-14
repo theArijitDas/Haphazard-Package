@@ -4,7 +4,7 @@
 **.ipynb
 
 # Virtual environments
-.venv/
+.*env/
 
 # Distribution / packaging
 dist/
