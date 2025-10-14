@@ -32,6 +32,9 @@ setup(
         "scikit-learn",
         "torch",
     ],
+    extra_requires={
+        "ovfm": ["statsmodels"],
+    },
     python_requires=">=3.10",
     license="MIT",
     classifiers=[
