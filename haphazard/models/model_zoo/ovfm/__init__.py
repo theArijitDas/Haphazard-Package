@@ -20,6 +20,16 @@ from ...base_model import BaseModel, BaseDataset
 from ...model_zoo import register_model
 from ....utils.seeding import seed_everything
 
+# Additioanl dependency check for OVFM
+try:
+    import statsmodels.api as sm  # type: ignore
+except ImportError as e:
+    raise ImportError(
+        "statsmodels is required for the OLIFL model. "
+        "Install it using `pip install haphazard[olifl]`."
+    ) from e
+
+
 
 def get_cont_indices(X: NDArray) -> NDArray[np.bool_]:
     max_ord=14

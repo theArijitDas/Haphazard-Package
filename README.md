@@ -157,6 +157,9 @@ outputs = model(dataset)
 
 - Added model OVFM
 
+NOTE: Model OVFM requires extra dependency 'statsmodels'. Use command `pip install haphazard[ovfm]` 
+for additioanl dependency installation.
+
 ### v1.0.0
 
 (Considered to be the base version, ignore versions before this)
