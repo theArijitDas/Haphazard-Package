@@ -45,17 +45,22 @@ haphazard/
 ├── data/                          # Dataset related modules
 │   ├── __init__.py
 │   ├── base_dataset.py            # Abstract BaseDataset class
-│   └── datasets/                  # All dataset implementations
-│       ├── __init__.py
-│       └── dummy_dataset/
-│           └── __init__.py
+│   ├── mask.py
+│   └── datasets/   
+│       ├── __init__.py            # All dataset implementations
+│       ├── dummu_dataset/
+│       ├── magic04/
+│       ├── dry_bean/
+│       └── gas/
 ├── models/                        # Model related modules
 │   ├── __init__.py
 │   ├── base_model.py              # Abstract BaseModel class
 │   └── model_zoo/                 # All model implementations
 │       ├── __init__.py
-│       └── dummy_model/
-│           └── __init__.py
+│       ├── dummu_model/
+│       ├── olvf/
+│       ├── olifl/
+│       └── ovfm/
 └── utils/                         # Optional helper functions
     └── ...
 ```
@@ -147,6 +152,10 @@ outputs = model(dataset)
 
 ---
 ## Versions
+
+### v1.0.2
+
+- Added model OVFM
 
 ### v1.0.0
 

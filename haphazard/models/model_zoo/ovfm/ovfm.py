@@ -46,13 +46,13 @@ class OVFM:
             X = X.reshape(1, -1)
         
         if self.decay_coef_change:
-            this_decay_coef = self.batch_c / (self.j/(self.batch_size_denominator*2) + self.batch_c)
+            this_decay_coef = self.batch_c / (self.j/(self.batch_size_denominator*2) + self.batch_c) #type: ignore
         else:
             this_decay_coef = 0.5
         
         self.j += 1
         
-        z_i, _ = self.oem.partial_fit_and_predict(X, max_workers=1,decay_coef=this_decay_coef)
+        z_i, _ = self.oem.partial_fit_and_predict(X, max_workers=1,decay_coef=this_decay_coef) #type: ignore
 
         X = np.nan_to_num(X, nan=0)
         x_i = np.hstack(([[1]], X)).reshape(-1)
