@@ -1,10 +1,10 @@
 """
 haphazard.models.model_zoo.olvf
 -------------------------------
-Online Learning with Virtual Features (OLVF) model runner.
+Wrapper over OLVF model for binary and multi-class classification.
 
-Implements the `RunOLVF` class for running the OLVF model on supported datasets,
-and a `MultiClassWrapper` for multi-class extension via One-vs-Rest strategy.
+Implements `RunOLVF` runner class and a `MultiClassWrapper` for handling
+multi-class tasks using a One-vs-Rest strategy.
 """
 
 import time
@@ -88,12 +88,18 @@ class MultiClassWrapper:
 @register_model("olvf")
 class RunOLVF(BaseModel):
     """
-    Runner class for the Online Learning with Virtual Features (OLVF) model.
+    Runner class for OLVF model.
 
-    Notes
-    -----
-    - Supports classification tasks only.
-    - For multi-class problems, uses One-vs-Rest strategy internally.
+    Attributes
+    ----------
+    name : str
+        Model name.
+    tasks : set[str]
+        Supported task types.
+    deterministic : bool
+        Whether model is deterministic.
+    hyperparameters : set[str]
+        Supported hyperparameters.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -118,32 +124,32 @@ class RunOLVF(BaseModel):
         mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
-    ) -> dict[str, NDArray | float | bool]:
+    ) -> dict[str, Any]:
         """
-        Run the OLVF model on the given dataset.
+        Run the OLVF model on a dataset.
 
         Parameters
         ----------
         dataset : BaseDataset
-            Dataset on which the model is trained and evaluated.
+            Dataset object with `.load_data()` and `.load_mask()`.
         mask_params : dict[str, Any] | None, optional
             Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
-            Parameters for OLVF model initialization.
+            Hyperparameters for OLVF model.
         seed : int, default=42
             Random seed for reproducibility.
 
         Returns
         -------
-        dict[str, NDArray | float | bool]
+        dict[str, Any]
             Dictionary containing:
-                - "labels": Ground truth labels.
-                - "preds": Predicted labels.
-                - "logits": Model output logits or probabilities.
-                - "time_taken": Time taken for full dataset pass.
-                - "is_logit": Indicates whether scores are logits.
+            - labels: Ground truth labels.
+            - preds: Predicted labels.
+            - logits: Model output logits or probabilities.
+            - time_taken: Time taken for full dataset pass.
+            - is_logit: Indicates whether scores are logits (True) or probabilities (False).
         """
-        # --- Validate task type ---
+        # --- Validate task ---
         if dataset.task not in self.tasks:
             raise ValueError(
                 f"Model '{self.__class__.__name__}' does not support '{dataset.task}'. "
@@ -153,32 +159,29 @@ class RunOLVF(BaseModel):
         mask_params = mask_params or {}
         model_params = model_params or {}
 
-        # Set random seed
-        seed_everything(seed)
+        # --- Load data ---
+        x, y = dataset.load_data()
+        mask = dataset.load_mask(**mask_params)
 
+        # Set random seed and initialize base_model
+        seed_everything(seed)
         base_model: OLVF = OLVF(**model_params)
 
         if dataset.task == "regression":
             raise NotImplementedError("Regression task not supported for OLVF.")
 
         elif dataset.task == "classification":
-            # Determine model type
             if dataset.num_classes == 2:
                 model: OLVF | MultiClassWrapper = base_model
             else:
                 if dataset.num_classes is None:
-                    raise ValueError(
-                        f"For classification task, '{dataset.name}.num_classes' cannot be None."
-                    )
+                    raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
                 model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
-
-            # Load data
-            x, y = dataset.load_data()
-            mask = dataset.load_mask(**mask_params)
 
             pred_list: list[int | float] = []
             logit_list: list[list[float] | float] = []
 
+            # --- Train model ---
             start_time = time.perf_counter()
 
             for x_i, y_i, m_i in tqdm(
@@ -208,8 +211,7 @@ class RunOLVF(BaseModel):
                     f"Expected logits to be 2D for multi-class classification, got {logits.shape}."
                 )
 
-            # OLVF model returns logits
-            is_logit = True
+            is_logit = True  # OLVF model returns logits
 
             return {
                 "labels": labels,

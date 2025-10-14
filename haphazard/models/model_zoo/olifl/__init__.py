@@ -109,6 +109,14 @@ class RunOLIFL(BaseModel):
     """
 
     def __init__(self, **kwargs: Any):
+        """
+        Initialize the OLIFL runner class.
+
+        Parameters
+        ----------
+        **kwargs
+            Optional parameters forwarded to `BaseModel`.
+        """
         self.name = "OLIFL"
         self.tasks = {"classification"}
         self.deterministic = False
@@ -119,33 +127,33 @@ class RunOLIFL(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any],
-        model_params: dict[str, Any],
-        seed: int,
+        mask_params: dict[str, Any] | None = None,
+        model_params: dict[str, Any] | None = None,
+        seed: int = 42,
     ) -> dict[str, Any]:
         """
-        Train the OLIFL model or its multi-class wrapper on a dataset.
+        Run the OLIFL model on a dataset.
 
         Parameters
         ----------
         dataset : BaseDataset
             Dataset object with `.load_data()` and `.load_mask()`.
         mask_params : dict
-            Parameters to pass to the dataset's `load_mask`.
+            Parameters for dataset mask generation.
         model_params : dict
             Hyperparameters for OLIFL model.
-        seed : int
+        seed : int, default=42
             Random seed for reproducibility.
 
         Returns
         -------
         dict[str, Any]
             Dictionary containing:
-            - labels : np.ndarray of shape (n_samples,)
-            - preds : np.ndarray of shape (n_samples,)
-            - logits : np.ndarray
-            - time_taken : float
-            - is_logit : bool (False)
+            - labels : Ground truth labels.
+            - preds : Predicted labels.
+            - logits : Model output logits or probabilities.
+            - time_taken : Time taken for full dataset pass.
+            - is_logit : Indicates whether scores are logits (True) or probabilities (False).
         """
         # --- Validate task ---
         if dataset.task not in self.tasks:
@@ -153,53 +161,65 @@ class RunOLIFL(BaseModel):
                 f"Model {self.__class__.__name__} does not support {dataset.task}. "
                 f"Supported task(s): {self.tasks}"
             )
-
-        model_params["seed"] = seed
-        base_model: OLIFL = OLIFL(**model_params)
-
-        # --- Determine model type ---
-        if dataset.task == "regression":
-            raise NotImplementedError("Regression task not supported for OLIFL.")
-
-        if dataset.num_classes == 2:
-            model: OLIFL | MultiClassWrapper = base_model
-        else:
-            if dataset.num_classes is None:
-                raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
-            print(
-                f"[Running {dataset.num_classes} times "
-                "for multi-class classification (OvR strategy).]")
-            model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
+        
+        mask_params = mask_params or {}
+        model_params = model_params or {}
 
         # --- Load data ---
         x, y = dataset.load_data()
         mask = dataset.load_mask(**mask_params)
 
-        # --- Train model ---
-        start_time = time.perf_counter()
-        preds, logits = model.fit(x, y, x, mask)  # type: ignore
-        time_taken = time.perf_counter() - start_time
+        # Set random seed and initialize base_model
+        model_params["seed"] = seed
+        base_model: OLIFL = OLIFL(**model_params)
 
-        # --- Format outputs ---
-        labels = np.asarray(y, dtype=np.int64)
-        preds = np.asarray(preds, dtype=np.int64)
-        logits = np.asarray(logits, dtype=np.float64)
+        if dataset.task == "regression":
+            raise NotImplementedError("Regression task not supported for OLIFL.")
 
-        # --- Sanity checks ---
-        if dataset.num_classes == 2:
-            assert logits.ndim == 1, f"Expected logits 1D for binary classification, got {logits.shape}."
-        else:
-            assert logits.ndim == 2, f"Expected logits 2D for multi-class classification, got {logits.shape}."
+        elif dataset.task == "classification":
+            if dataset.num_classes == 2:
+                model: OLIFL | MultiClassWrapper = base_model
+            else:
+                if dataset.num_classes is None:
+                    raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
+                print(
+                    f"[Running {dataset.num_classes} times "
+                    "for multi-class classification (OvR strategy).]")
+                model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
 
-        is_logit = False  # OLIFL returns probabilities
+            # --- Train model ---
+            start_time = time.perf_counter()
+            preds, logits = model.fit(x, y, x, mask)  # type: ignore
+            end_time = time.perf_counter()
+            time_taken = end_time - start_time
 
-        return {
-            "labels": labels,
-            "preds": preds,
-            "logits": logits,
-            "time_taken": time_taken,
-            "is_logit": is_logit,
-        }
+            # --- Format outputs ---
+            labels = np.asarray(y, dtype=np.int64)
+            preds = np.asarray(preds, dtype=np.int64)
+            logits = np.asarray(logits, dtype=np.float64)
+
+            # --- Sanity checks ---
+            if dataset.num_classes == 2:
+                assert logits.ndim == 1, (
+                    f"Expected logits to be 1D for binary classification, got {logits.shape}."
+                )
+            else:
+                assert logits.ndim == 2, (
+                    f"Expected logits to be 2D for multi-class classification, got {logits.shape}."
+                )
+
+            is_logit = False  # OLIFL returns probabilities
+
+            return {
+                "labels": labels,
+                "preds": preds,
+                "logits": logits,
+                "time_taken": time_taken,
+                "is_logit": is_logit,
+            }
+        
+        # Fallback for unsupported task
+        raise ValueError(f"Unknown task type: '{dataset.task}'")
 
 
 __all__ = ["RunOLIFL"]
