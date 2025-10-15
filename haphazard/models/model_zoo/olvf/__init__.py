@@ -171,11 +171,12 @@ class RunOLVF(BaseModel):
             raise NotImplementedError("Regression task not supported for OLVF.")
 
         elif dataset.task == "classification":
+            if dataset.num_classes is None:
+                raise ValueError(f"'{dataset.name}.num_classes' cannot be None for classification task.")
+            
             if dataset.num_classes == 2:
                 model: OLVF | MultiClassWrapper = base_model
             else:
-                if dataset.num_classes is None:
-                    raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
                 model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
 
             pred_list: list[int | float] = []
@@ -184,12 +185,13 @@ class RunOLVF(BaseModel):
             # --- Train model ---
             start_time = time.perf_counter()
 
-            for x_i, y_i, m_i in tqdm(
-                zip(x, y, mask),
-                total=len(x),
+            for i in tqdm(
+                range(dataset.n_samples),
+                total=dataset.n_samples,
                 desc="Running OLVF",
             ):
-                pred, logit = model.partial_fit(x_i, m_i, int(y_i))
+                xi, mi, yi = x[i], mask[i], y[i]
+                pred, logit = model.partial_fit(xi, mi, int(yi))
                 pred_list.append(pred)
                 logit_list.append(logit)
 

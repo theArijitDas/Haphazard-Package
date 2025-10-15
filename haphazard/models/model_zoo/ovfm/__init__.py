@@ -199,11 +199,12 @@ class RunOVFM(BaseModel):
             raise NotImplementedError("Regression task not supported for OVFM.")
 
         elif dataset.task == "classification":
+            if dataset.num_classes is None:
+                raise ValueError(f"'{dataset.name}.num_classes' cannot be None for classification task.")
+            
             if dataset.num_classes == 2:
                 model: OVFM | MultiClassWrapper = base_model
             else:
-                if dataset.num_classes is None:
-                    raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
                 model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
 
             pred_list: list[int | float] = []
@@ -213,8 +214,8 @@ class RunOVFM(BaseModel):
             start_time = time.perf_counter()
 
             for i in tqdm(
-                range(len(x_masked)),
-                total=len(x_masked),
+                range(dataset.n_samples),
+                total=dataset.n_samples,
                 desc="Running OVFM",
             ):
                 xi = x_masked[[i]]

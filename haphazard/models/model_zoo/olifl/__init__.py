@@ -177,14 +177,16 @@ class RunOLIFL(BaseModel):
             raise NotImplementedError("Regression task not supported for OLIFL.")
 
         elif dataset.task == "classification":
+            if dataset.num_classes is None:
+                raise ValueError(f"'{dataset.name}.num_classes' cannot be None for classification task.")
+            
             if dataset.num_classes == 2:
                 model: OLIFL | MultiClassWrapper = base_model
             else:
-                if dataset.num_classes is None:
-                    raise ValueError(f"'{dataset.name}.num_classes' cannot be None for multi-class.")
                 print(
                     f"[Running {dataset.num_classes} times "
-                    "for multi-class classification (OvR strategy).]")
+                    "for multi-class classification (OvR strategy).]"
+                )
                 model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
 
             # --- Train model ---
