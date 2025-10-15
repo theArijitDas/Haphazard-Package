@@ -153,6 +153,15 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.3
+
+- Added model DynFo
+
+> NOTE:
+> - DynFo requires an initial buffer.
+> - If no initial buffer size is provided, it is set to 1.
+> - The length of the output labels/preds/logits is reduced by the initial buffer size.
+
 ### v1.0.2
 
 - Added model OVFM
@@ -161,7 +170,7 @@ outputs = model(dataset)
 
 (Considered to be the base version, ignore versions before this)
 
-- Includes models 'OLVF' and 'OLIFL' models natively.
+- Includes models 'OLVF' and 'OLIFL' natively.
 - Includes datasets 'Magic04', 'Dry Bean' and 'Gas'. (Does not include raw files to read from, please use `base_path` argument to point to relevant  path containing the raw files).
 
 ---
