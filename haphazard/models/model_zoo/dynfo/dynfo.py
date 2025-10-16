@@ -271,7 +271,7 @@ class DynFo:
                 wc += (weight * prob)
 
         if self.num_classes == 2:
-            return int(np.argmax(wc)), float(max(wc))
+            return int(np.argmax(wc)), float(wc[1])
         
         return int(np.argmax(wc)), wc.astype(float).tolist()
 

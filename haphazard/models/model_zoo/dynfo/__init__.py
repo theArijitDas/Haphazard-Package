@@ -38,7 +38,7 @@ class RunDynFo(BaseModel):
 
     def __init__(self, **kwargs) -> None:
         """
-        Initialize the OLVF runner class.
+        Initialize the DynFo runner class.
 
         Parameters
         ----------
