@@ -16,7 +16,7 @@ setup(
     author="Arijit Das",
     author_email="dasarijitjnv@gmail.com",
     description="A modular framework for registering and running haphazard datasets and models.",
-    long_description=(Path(__file__).parent / "README.md").read_text(),
+    long_description=(Path(__file__).parent / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/theArijitDas/Haphazard-Package/",
     project_urls={
@@ -33,6 +33,10 @@ setup(
         "torch",
         "statsmodels",
     ],
+    extras_require={
+        "orf3v": ["tdigest"],
+        "all": ["tdigest"],
+    },
     python_requires=">=3.10",
     license="MIT",
     classifiers=[

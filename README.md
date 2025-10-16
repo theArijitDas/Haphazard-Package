@@ -153,6 +153,54 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.4
+
+* Added model ORF3V.
+
+> NOTE:
+>
+> * ORF3V also requires an initial buffer, which works similarly to DynFo.
+> * ORF3V depends on the optional package `tdigest`, which requires Microsoft Visual C++ Build Tools.
+> * To install with this dependency:
+>
+>   1. Visit: [https://visualstudio.microsoft.com/visual-cpp-build-tools/](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+>   2. Download and install Build Tools for Visual Studio.
+>      During installation:
+>
+>      * Select “Desktop development with C++” workload.
+>      * Ensure **MSVC v143 or later**, **Windows 10/11 SDK**, and **CMake tools** are checked.
+> * After installation, restart your terminal and re-run:
+>
+>   ```
+>   pip install haphazard[orf3v]
+>   ```
+>
+>   or
+>
+>   ```
+>   pip install haphazard[all]   # installs all optional dependencies
+>   ```
+> * The package can still be used without installing `tdigest`; only the `ORF3V` model will be unavailable.
+
+* Minor bug fixes:
+
+> - In `haphazard/models/model_zoo/dynfo/__init__.py`: corrected docstring from
+>   `"Initialize the OLVF runner class."` -> `"Initialize the DynFo runner class."`
+> - In `haphazard/models/model_zoo/dynfo/dynfo.py`: changed
+>
+>   ```python
+>   return int(np.argmax(wc)), float(max(wc))
+>   ```
+>
+>   to
+>
+>   ```python
+>   return int(np.argmax(wc)), float(wc[1])
+>   ```
+>
+>   for correct AUROC/AUPRC compatibility.
+
+
 ### v1.0.3
 
 - Added model DynFo
