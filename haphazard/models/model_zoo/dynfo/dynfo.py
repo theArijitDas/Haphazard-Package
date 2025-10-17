@@ -256,6 +256,8 @@ class DynFo:
             learner.fit(X, Y, feature)
 
     def dropLearner(self, i):
+        if len(self.learners) == 1:
+            return
         self.learners.pop(i)
         self.weights.pop(i)
         self.acceptedFeatures.pop(i)
