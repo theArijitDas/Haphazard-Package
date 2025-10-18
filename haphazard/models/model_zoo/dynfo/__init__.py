@@ -12,7 +12,6 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-
 from .dynfo import DynFo
 from ...base_model import BaseModel, BaseDataset
 from ...model_zoo import register_model

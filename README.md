@@ -153,9 +153,28 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.5
+
+- Added model **OCDS**.
+
+- **Bug Fixes and Improvements:**
+> - In `haphazard/models/model_zoo/dynfo/dynfo.py`:  
+>   Updated the `dropLearner()` method to prevent errors when attempting to remove the last remaining weak learner.
+>   ```python
+>   def dropLearner(self, i):
+>       if len(self.learners) == 1:
+>           return
+>       self.learners.pop(i)
+>       self.weights.pop(i)
+>       self.acceptedFeatures.pop(i)
+>       assert len(self.weights) == len(self.learners) == len(self.acceptedFeatures)
+>   ```
+>   This ensures stability in low-learner configurations and prevents `IndexError` during runtime.
+
+
 ### v1.0.4
 
-* Added model ORF3V.
+- Added model **ORF3V**.
 
 > NOTE:
 >
@@ -182,7 +201,7 @@ outputs = model(dataset)
 >   ```
 > * The package can still be used without installing `tdigest`; only the `ORF3V` model will be unavailable.
 
-* Minor bug fixes:
+- **Bug Fixes and Improvements:**
 
 > - In `haphazard/models/model_zoo/dynfo/__init__.py`: corrected docstring from
 >   `"Initialize the OLVF runner class."` -> `"Initialize the DynFo runner class."`
@@ -203,7 +222,7 @@ outputs = model(dataset)
 
 ### v1.0.3
 
-- Added model DynFo
+- Added model **DynFo**
 
 > NOTE:
 > - DynFo requires an initial buffer.
@@ -212,14 +231,14 @@ outputs = model(dataset)
 
 ### v1.0.2
 
-- Added model OVFM
+- Added model **OVFM**
 
 ### v1.0.0
 
 (Considered to be the base version, ignore versions before this)
 
-- Includes models 'OLVF' and 'OLIFL' natively.
-- Includes datasets 'Magic04', 'Dry Bean' and 'Gas'. (Does not include raw files to read from, please use `base_path` argument to point to relevant  path containing the raw files).
+- Includes models **OLVF** and **OLIFL** natively.
+- Includes datasets **Magic04**, **Dry Bean** and **Gas**. (Does not include raw files to read from, please use `base_path` argument to point to relevant  path containing the raw files).
 
 ---
 
