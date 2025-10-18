@@ -153,6 +153,10 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.6
+
+- Added datasets **A8a**, **IMDB**, **Susy**, and **Higgs**.
+
 ### v1.0.5
 
 - Added model **OCDS**.
