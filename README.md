@@ -153,6 +153,13 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.7
+
+- **Bug Fix**
+> - Set RunOCDS.determministic = `False` as it uses random initialization.
+> - Not passing 'tau' (or passing None) hyperparameter in OCDS will now result in 
+> using tau=np.sqrt(1.0/t) as a varied step size, as mentioned in OCDS paper (but not GLSC paper).
+
 ### v1.0.6
 
 - Added datasets **A8a**, **IMDB**, **Susy**, and **Higgs**.
