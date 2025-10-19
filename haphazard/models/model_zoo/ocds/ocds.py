@@ -3,7 +3,9 @@ haphazard/models/model_zoo/ocds/ocds.py
 ---------------------------------------
 Implementation of OCDS (GLSC) algorithm.
 
-Paper: https://ieeexplore.ieee.org/document/9066871
+Papers
+    GLSC: https://ieeexplore.ieee.org/document/9066871
+    OCDS: https://www.ijcai.org/proceedings/2019/346
 """
 
 import numpy as np
@@ -20,8 +22,8 @@ class OCDS:
             lamda: float, 
             beta1: float, 
             gamma: float, 
-            tau : float,
             num_features: int ,
+            tau : float|None = None,
             eps: float = 1e-12,
             clip_val: float = 1e3,        # [GUARD] clip range for exploding values
             min_norm: float = 1e-8        # [GUARD] prevent vanishing norms
@@ -41,7 +43,7 @@ class OCDS:
             Used to calculate β2, as `β2 = 2λ - 2β1`.
         gamma : float
             Truncation ratio for the weight vector (classifier).
-        tau : float
+        tau : float|None
             Learning rate for linear classifier (`w`).
         num_features : int
             Total (max) number of features to be observed, only used for ease of coding.
@@ -64,6 +66,9 @@ class OCDS:
         self.eps = eps
         self.clip_val = clip_val
         self.min_norm = min_norm
+
+        if self.tau is None:
+            print(f"Found tau={tau!r}. Will use tau=np.sqrt(1.0/t) as a varied step size.")
 
         # Initialize parameters
         self.w = np.zeros(self.num_features)
@@ -188,8 +193,8 @@ class OCDS:
 
         # [GUARD] gradient clipping to prevent exploding updates
         grad_w = np.clip(grad_w, -self.clip_val, self.clip_val)
-
-        self.w = self.w - self.tau * grad_w
+        tau = np.sqrt(1.0/self.T) if self.tau is None else self.tau
+        self.w = self.w - tau * grad_w
 
         # [GUARD] weight norm stabilization (prevent NaN/Inf or vanishing)
         w_norm = np.linalg.norm(self.w)

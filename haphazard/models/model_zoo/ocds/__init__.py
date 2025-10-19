@@ -112,7 +112,7 @@ class RunOCDS(BaseModel):
         """
         self.name = "OCDS"
         self.tasks = {"classification"}
-        self.deterministic = True
+        self.deterministic = False
         self.hyperparameters = {
             "alpha",
             "lamda",
