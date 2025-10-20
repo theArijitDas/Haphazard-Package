@@ -153,6 +153,9 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.8
+- Added model **NB3**.
+
 ### v1.0.7
 
 - **Bug Fix**
