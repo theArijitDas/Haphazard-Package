@@ -82,7 +82,7 @@ class NB3:
         self.UpdateWordStats(Document, DocClass)
         
         # Evaluate and calculate X2 statistic of a word
-        for Word in Document:
+        for Word in self.Vocabulary:
             Evaluation = EvaluateFeature(Word, self.WordStats, sum(self.Nc), self.num_classes)
             self.Features[Word] = Evaluation
         
