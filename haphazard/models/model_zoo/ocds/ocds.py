@@ -184,7 +184,7 @@ class OCDS:
         residual = y - float(self.w.T @ psi)  # scalar
 
         # --- Update self.w ---
-        grad_w1 = -2.0 * residual * psi             # shape (d,)
+        grad_w1 = (-2.0 / dt) * residual * psi             # shape (d,)
         grad_w2 = self.lamda * np.sign(self.w)      # shape (d,) [subgradient of lambda * ||w||_1]
         L = self.laplacian()
         grad_w3 = self.beta2* ((L + L.T) @ self.w)  # shape (d,)
