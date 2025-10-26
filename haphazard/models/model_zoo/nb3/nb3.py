@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def EvaluateFeature(Word, WordStats, N, num_classes):
+def EvaluateFeature(Word, WordStats, Nc, num_classes):
     # A : number of times w and c co-occur
     # B : number of times w occurs without c
     # C : number of times c occurs without w
@@ -10,14 +10,19 @@ def EvaluateFeature(Word, WordStats, N, num_classes):
     
     # Returns an evaluation score
 
+    N = np.sum(Nc)
     scores = []
+    total_pres = np.sum(WordStats[Word][1])
     for c in range(num_classes):
         A = WordStats[Word][1][c]
-        B = sum(WordStats[Word][1]) - A
-        C = WordStats[Word][0][c]
-        D = sum(WordStats[Word][0]) - C
+        B = total_pres - A
+        C = Nc[c] - A
+        D = N - (A + B + C)
         scores.append(X2(A, B, C, D, N))
-    return np.mean(scores)
+    
+    # The paper doesn’t specify how to aggregate X2 across classes.
+    # We use the max instead of the mean to capture the strongest class association.
+    return np.max(scores)
 
 def X2(A, B, C, D, N):
     # calculates the chi square statistics of a feature
@@ -44,9 +49,7 @@ class NB3:
         self.FeatureList = list()   # list of words (features) sorted according to evaluation score
 
         self.classifier = Classifier(num_classes)
-        self.Nc = np.ones(num_classes, dtype=float) # Number of documents corresponding to each class
-                                                    # Initialized with ones for smooting 
-                                                    # and to avoid division be zero error
+        self.Nc = np.zeros(num_classes, dtype=float) # Number of documents corresponding to each class
 
         if (Documents is not None) and (Classes is not None):
             self.InitialTraining(Documents, Classes)
@@ -76,14 +79,14 @@ class NB3:
         for Word in set(Document):
             if Word not in self.Vocabulary:
                 self.Vocabulary.add(Word)
-                self.WordStats[Word] = np.zeros((2, self.num_classes))
+                self.WordStats[Word] = np.zeros((2, self.num_classes), dtype=float)
         
         # Update WordStats
         self.UpdateWordStats(Document, DocClass)
         
         # Evaluate and calculate X2 statistic of a word
         for Word in self.Vocabulary:
-            Evaluation = EvaluateFeature(Word, self.WordStats, sum(self.Nc), self.num_classes)
+            Evaluation = EvaluateFeature(Word, self.WordStats, self.Nc, self.num_classes)
             self.Features[Word] = Evaluation
         
         # Sort features in decreasing order of their evaluation value
@@ -122,13 +125,13 @@ class Classifier:
     def Update(self, Vocabulary, WordStats, Nc):
 
         # Probability of Document belonging to class nc
-        self.Pc = Nc/sum(Nc)
+        self.Pc = Nc/sum(Nc) if sum(Nc) != 0 else self.Pc
 
         # Conditional probability of each word
         for Word in Vocabulary:
-            self.P[Word] = (WordStats[Word][1] + 1) / (Nc + 1)
-            # In case of no pretraining, to avoid divide by zero situation, producing NaN outputs,
-            # Nc is initalized with 1s instead of 0s.
+            self.P[Word] = (WordStats[Word][1] + 1) / (Nc + 2)
+            # In case of no pretraining, to avoid divide by zero situation, producing NaN outputs
+            # The addition in the numerator and denominator are for Laplace smoothing to avoid division by zero.
     
     def score(self, Document, FeatureList):
         scores = self.Pc.copy()
