@@ -130,7 +130,6 @@ class Classifier:
         # Conditional probability of each word
         for Word in Vocabulary:
             self.P[Word] = (WordStats[Word][1] + 1) / (Nc + 2)
-            # In case of no pretraining, to avoid divide by zero situation, producing NaN outputs
             # The addition in the numerator and denominator are for Laplace smoothing to avoid division by zero.
     
     def score(self, Document, FeatureList):
