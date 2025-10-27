@@ -153,6 +153,13 @@ outputs = model(dataset)
 ---
 ## Versions
 
+### v1.0.9
+
+- Added model **FAE**
+
+- **Bug Fix**
+> Update the X2 calculation in NB3 model
+
 ### v1.0.8
 - Added model **NB3**.
 
