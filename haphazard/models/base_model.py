@@ -3,8 +3,8 @@ haphazard.models.base_model
 ---------------------------
 Abstract base class for models.
 
-All model implementations must inherit from `BaseModel` and implement both
-`__init__()` and `fit()` methods.
+All model implementations must inherit from `BaseModel` and implement `fit()` method 
+and call super().__init__() from their constructor.
 
 Notes
 -----
@@ -122,7 +122,6 @@ class BaseModel(ABC):
     hyperparameters: set[str]
 
     # ---------------------------------------------------------------------
-    @abstractmethod
     def __init__(self, **kwargs: Any) -> None:
         """
         Initialize the model runner class.
@@ -149,7 +148,6 @@ class BaseModel(ABC):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42
     ) -> dict[str, Any]:
@@ -160,8 +158,6 @@ class BaseModel(ABC):
         ----------
         dataset : BaseDataset
             Dataset on which the model is trained.
-        mask_params : dict[str, Any] | None, optional
-            Parameters used for masking the data (default None).
         model_params : dict[str, Any] | None, optional
             Hyperparameters used to initialize the model (default None).
         seed : int, optional
@@ -196,7 +192,6 @@ class BaseModel(ABC):
     def __call__(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42
     ) -> dict[str, Any]:
@@ -207,8 +202,6 @@ class BaseModel(ABC):
         ----------
         dataset : BaseDataset
             Dataset on which the model is trained.
-        mask_params : dict[str, Any] | None, optional
-            Parameters used for masking the data (default None).
         model_params : dict[str, Any] | None, optional
             Hyperparameters used to initialize the model (default None).
         seed : int, optional
@@ -226,8 +219,6 @@ class BaseModel(ABC):
         # Use stored hyperparameters if none provided
         if model_params is None:
             model_params = self.state_dict
-        if mask_params is None:
-            mask_params = {}
 
         # Ensure required hyperparameters are provided
         if self.hyperparameters and not model_params:
@@ -239,7 +230,7 @@ class BaseModel(ABC):
         # Store hyperparameters for future calls
         self.state_dict = model_params
 
-        return self.fit(dataset, mask_params, self.state_dict, seed)
+        return self.fit(dataset, self.state_dict, seed)
 
     # ---------------------------------------------------------------------
     def __repr__(self) -> str:
