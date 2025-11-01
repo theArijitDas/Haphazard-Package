@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .ovfm import OVFM
 from ...base_model import BaseModel, BaseDataset
@@ -134,7 +134,6 @@ class RunOVFM(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, Any]:
@@ -145,8 +144,6 @@ class RunOVFM(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset object with `.load_data()` and `.load_mask()`.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
             Hyperparameters for OVFM model.
         seed : int, default=42
@@ -162,6 +159,12 @@ class RunOVFM(BaseModel):
             - logits: Model output logits or probabilities.
             - time_taken: Time taken for full dataset pass.
             - is_logit: Indicates whether scores are logits (True) or probabilities (False).
+        
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task type ---
         if dataset.task not in self.tasks:
@@ -170,22 +173,19 @@ class RunOVFM(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
 
-        mask_params = mask_params or {}
         model_params = model_params or {}
 
-        # --- Load data ---
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
-
         # OVFM specific pre-processing
+        x, mask, _ = zip(*[xmy for xmy in dataset])
         x_masked = np.where(mask, x, np.nan)
+        dataset.normalize.reset()
 
         all_cont_indices = get_cont_indices(x_masked)
         all_ord_indices = ~all_cont_indices
-        n_feat = x_masked.shape[1]
+        n_feat = dataset.n_features
 
         # WINDOW_SIZE is the buffer size. Therefore we set it as the minimum of 10% of total instances of 500 instances.
-        WINDOW_SIZE = min(20, int(x_masked.shape[0]*.1))
+        WINDOW_SIZE = min(20, int(dataset.n_samples*.1))
 
         # Set random seed and initialize base_model
         seed_everything(seed)
@@ -213,15 +213,12 @@ class RunOVFM(BaseModel):
             # --- Train model ---
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(dataset.n_samples),
+            for x, _, y in tqdm(
+                dataset,
                 total=dataset.n_samples,
                 desc="Running OVFM",
             ):
-                xi = x_masked[[i]]
-                yi = y[[i]]
-
-                pred, logit = model.partial_fit(xi, yi)
+                pred, logit = model.partial_fit(x, y)
                 pred_list.append(pred)
                 logit_list.append(logit)
 
@@ -229,7 +226,7 @@ class RunOVFM(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y, dtype=np.int64)
+            labels = np.asarray(dataset.y, dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 

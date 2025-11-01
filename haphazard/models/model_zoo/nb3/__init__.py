@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .nb3 import NB3
 from ...base_model import BaseModel, BaseDataset
@@ -54,7 +54,6 @@ class RunNB3(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, NDArray | float | bool]:
@@ -65,8 +64,6 @@ class RunNB3(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset on which the model is trained and evaluated.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
             Parameters for NB3 model initialization.
         seed : int, default=42
@@ -81,6 +78,12 @@ class RunNB3(BaseModel):
                 - "logits": Model output logits or probabilities.
                 - "time_taken": Time taken for full dataset pass.
                 - "is_logit": Indicates whether scores are logits.
+            
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task type ---
         if dataset.task not in self.tasks:
@@ -89,18 +92,7 @@ class RunNB3(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
 
-        mask_params = mask_params or {}
         model_params = model_params or {}
-
-        # Load data
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
-
-        # Set random seed
-        seed_everything(seed)
-        model: NB3 = NB3(num_classes=dataset.num_classes)
-        fraction_of_features = model_params.get("fraction_of_features", 1.0)
-        num_to_select = max(1, int(fraction_of_features * dataset.n_features))
 
         if dataset.task == "regression":
             raise NotImplementedError("Regression task not supported for NB3.")
@@ -110,23 +102,26 @@ class RunNB3(BaseModel):
                 raise ValueError(
                     f"For classification task, '{dataset.name}.num_classes' cannot be None."
                 )
+            
+            # Set random seed
+            seed_everything(seed)
+            model: NB3 = NB3(num_classes=dataset.num_classes)
+            fraction_of_features = model_params.get("fraction_of_features", 1.0)
+            num_to_select = max(1, int(fraction_of_features * dataset.n_features))
 
             pred_list: list[int | float] = []
             logit_list: list[list[float] | float] = []
 
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(dataset.n_samples),
+            for x, mask, y in tqdm(
+                dataset,
                 total=dataset.n_samples,
                 desc="Running NB3",
             ):
-                xi = x[i]
-                mi = mask[i]
-                yi = y[i]
 
-                document = {k: xi[k] for k in np.where(mi)[0]}
-                doc_class = int(yi)
+                document = {k: x[k] for k in np.where(mask)[0]}
+                doc_class = int(y)
 
                 pred, logit = model.partial_fit(document, doc_class, num_to_select)
                 pred_list.append(pred)
@@ -136,7 +131,7 @@ class RunNB3(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y, dtype=np.int64)
+            labels = np.asarray(dataset.y, dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 

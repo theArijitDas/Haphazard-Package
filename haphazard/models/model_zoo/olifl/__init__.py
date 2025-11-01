@@ -127,7 +127,6 @@ class RunOLIFL(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, Any]:
@@ -138,8 +137,6 @@ class RunOLIFL(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset object with `.load_data()` and `.load_mask()`.
-        mask_params : dict
-            Parameters for dataset mask generation.
         model_params : dict
             Hyperparameters for OLIFL model.
         seed : int, default=42
@@ -154,6 +151,12 @@ class RunOLIFL(BaseModel):
             - logits : Model output logits or probabilities.
             - time_taken : Time taken for full dataset pass.
             - is_logit : Indicates whether scores are logits (True) or probabilities (False).
+
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task ---
         if dataset.task not in self.tasks:
@@ -162,12 +165,7 @@ class RunOLIFL(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
         
-        mask_params = mask_params or {}
         model_params = model_params or {}
-
-        # --- Load data ---
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
 
         # Set random seed and initialize base_model
         model_params["seed"] = seed
@@ -188,6 +186,11 @@ class RunOLIFL(BaseModel):
                     "for multi-class classification (OvR strategy).]"
                 )
                 model = MultiClassWrapper(base_model, num_classes=dataset.num_classes)
+            
+            # --- Load normalized data ---
+            x_mask_y = [xmy for xmy in dataset]
+            x, mask, y = zip(*x_mask_y)
+            x, mask, y = map(np.asarray, (x, mask, y))
 
             # --- Train model ---
             start_time = time.perf_counter()

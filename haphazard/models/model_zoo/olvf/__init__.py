@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .olvf import OLVF
 from ...base_model import BaseModel, BaseDataset
@@ -114,14 +114,13 @@ class RunOLVF(BaseModel):
         self.name = "OLVF"
         self.tasks = {"classification"}
         self.deterministic = True
-        self.hyperparameters = {"C", "C_bar", "B", "reg", "n_feat0"}
+        self.hyperparameters = {"C", "C_bar", "B", "reg"}
 
         super().__init__(**kwargs)
 
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, Any]:
@@ -132,8 +131,6 @@ class RunOLVF(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset object with `.load_data()` and `.load_mask()`.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
             Hyperparameters for OLVF model.
         seed : int, default=42
@@ -148,6 +145,12 @@ class RunOLVF(BaseModel):
             - logits: Model output logits or probabilities.
             - time_taken: Time taken for full dataset pass.
             - is_logit: Indicates whether scores are logits (True) or probabilities (False).
+
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task ---
         if dataset.task not in self.tasks:
@@ -155,17 +158,12 @@ class RunOLVF(BaseModel):
                 f"Model '{self.__class__.__name__}' does not support '{dataset.task}'. "
                 f"Supported task(s): {self.tasks}"
             )
-
-        mask_params = mask_params or {}
+        
         model_params = model_params or {}
-
-        # --- Load data ---
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
 
         # Set random seed and initialize base_model
         seed_everything(seed)
-        base_model: OLVF = OLVF(**model_params)
+        base_model: OLVF = OLVF(**model_params, n_feat0=dataset.n_features)
 
         if dataset.task == "regression":
             raise NotImplementedError("Regression task not supported for OLVF.")
@@ -185,13 +183,12 @@ class RunOLVF(BaseModel):
             # --- Train model ---
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(dataset.n_samples),
+            for x, mask, y in tqdm(
+                dataset,
                 total=dataset.n_samples,
                 desc="Running OLVF",
             ):
-                xi, mi, yi = x[i], mask[i], y[i]
-                pred, logit = model.partial_fit(xi, mi, int(yi))
+                pred, logit = model.partial_fit(x, mask, int(y))
                 pred_list.append(pred)
                 logit_list.append(logit)
 
@@ -199,7 +196,7 @@ class RunOLVF(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y, dtype=np.int64)
+            labels = np.asarray(dataset.y, dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 

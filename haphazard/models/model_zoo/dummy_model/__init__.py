@@ -8,14 +8,14 @@ from typing import Any
 import time
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ...base_model import BaseModel, BaseDataset
 from ...model_zoo import register_model
 
 
 @register_model("dummy")
-class DummyModel(BaseModel):
+class RunDummy(BaseModel):
     """
     Dummy model for testing and prototyping.
 
@@ -41,7 +41,6 @@ class DummyModel(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42
     ) -> dict[str, Any]:
@@ -52,8 +51,6 @@ class DummyModel(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset on which the model is evaluated.
-        mask_params : dict[str, Any] | None
-            Parameters for generating a mask. Default is None.
         model_params : dict[str, Any] | None
             Parameters for model initialization. Default is None.
         seed : int, default=42
@@ -87,6 +84,12 @@ class DummyModel(BaseModel):
         ------
         ValueError
             If dataset task is unsupported.
+        
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # Validate that the task is supported
         if dataset.task not in self.tasks:
@@ -96,22 +99,19 @@ class DummyModel(BaseModel):
             )
 
         rng = np.random.default_rng(seed)
-        x, y = dataset.load_data()
-        mask_params = mask_params or {}
-        mask = dataset.load_mask(**mask_params)
 
         # Regression task
         if dataset.task == "regression":
             pred_list: list[int | float] = []
             start_time = time.perf_counter()
 
-            for x_i, y_i, m_i in tqdm(zip(x, y, mask), total=len(x), desc="Running Dummy Model"):
+            for x, mask, y in tqdm(dataset, total=dataset.n_samples, desc="Running Dummy Model"):
                 pred_list.append(rng.random())
 
             time_taken = time.perf_counter() - start_time
 
             return {
-                "targets": np.asarray(y, dtype=np.float64),
+                "targets": np.asarray(dataset.y, dtype=np.float64),
                 "preds": np.asarray(pred_list, dtype=np.float64),
                 "time_taken": time_taken,
             }
@@ -122,7 +122,7 @@ class DummyModel(BaseModel):
             prob_list: list[list[float] | float] = []
             start_time = time.perf_counter()
 
-            for x_i, y_i, m_i in tqdm(zip(x, y, mask), total=len(x), desc="Running Dummy Model"):
+            for x, mask, y in tqdm(dataset, total=dataset.n_samples, desc="Running Dummy Model"):
                 if dataset.num_classes == 2:
                     prob = rng.random()
                     prob_list.append(prob)
@@ -134,9 +134,9 @@ class DummyModel(BaseModel):
 
             time_taken = time.perf_counter() - start_time
 
-            labels = np.asarray(y, dtype=np.int64)
+            labels = np.asarray(dataset.y, dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
-            logits = np.asarray(pred_list, dtype=np.float64)
+            logits = np.asarray(prob_list, dtype=np.float64)
             
             return {
                 "labels": labels,
@@ -147,3 +147,5 @@ class DummyModel(BaseModel):
             }
         
         return {}
+
+__all__ = ["RunDummy"]

@@ -10,7 +10,7 @@ import time
 from typing import Any
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .dynfo import DynFo
 from ...base_model import BaseModel, BaseDataset
@@ -57,7 +57,7 @@ class RunDynFo(BaseModel):
             "N",
             "theta1",
             "theta2",
-            "initial_bufer"
+            "initial_buffer"
         }
 
         super().__init__(**kwargs)
@@ -65,21 +65,18 @@ class RunDynFo(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, Any]:
         """
-        Run the DynDo model on a dataset.
+        Run the DynFo model on a dataset.
 
         Parameters
         ----------
         dataset : BaseDataset
-            Dataset object with `.load_data()` and `.load_mask()`.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
+            Dataset object.
         model_params : dict[str, Any] | None, optional
-            Hyperparameters for DynDo model.
+            Hyperparameters for DynFo model.
         seed : int, default=42
             Random seed for reproducibility.
 
@@ -92,6 +89,12 @@ class RunDynFo(BaseModel):
             - logits: Model output logits or probabilities.
             - time_taken: Time taken for full dataset pass.
             - is_logit: Indicates whether scores are logits (True) or probabilities (False).
+        
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task ---
         if dataset.task not in self.tasks:
@@ -100,27 +103,30 @@ class RunDynFo(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
 
-        mask_params = mask_params or {}
         model_params = model_params or {}
 
-        # --- Load data ---
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
-
         if dataset.task == "regression":
-            raise NotImplementedError("Regression task not supported for OLVF.")
+            raise NotImplementedError("Regression task not supported for DynFo.")
 
         elif dataset.task == "classification":
             if dataset.num_classes is None:
                 raise ValueError(f"'{dataset.name}.num_classes' cannot be None for classification task.")
 
-            # Set random seed and initialize base_model
+            # Get data for initial buffer
             initial_buffer = model_params.pop("initial_buffer", 0)
             initial_buffer = 0 if initial_buffer is None else initial_buffer
             start_idx = 1 if not initial_buffer else initial_buffer
 
+            init_data = dataset[:start_idx]
+            if isinstance(init_data, list):
+                x, mask, y = zip(*init_data)
+                x, mask, y = map(np.asarray, (x, mask, y))
+            else:
+                x, mask, y = init_data
+
+            # Set random seed and initialize base_model
             seed_everything(seed)
-            model: DynFo = DynFo(x[:start_idx], mask[:start_idx], y[:start_idx],
+            model: DynFo = DynFo(x, mask, y,
                                  **model_params, num_classes=dataset.num_classes)
 
             pred_list: list[int | float] = []
@@ -129,13 +135,12 @@ class RunDynFo(BaseModel):
             # --- Train model ---
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(start_idx, dataset.n_samples),
-                total=dataset.n_samples - initial_buffer,
+            for x, mask, y in tqdm(
+                dataset[start_idx:],
+                total=dataset.n_samples - start_idx,
                 desc="Running DynFo",
             ):
-                xi, mi, yi = x[i], mask[i], y[i]
-                pred, logit = model.partial_fit(xi, mi, int(yi))
+                pred, logit = model.partial_fit(x, mask, int(y))
                 pred_list.append(pred)
                 logit_list.append(logit)
 
@@ -143,7 +148,7 @@ class RunDynFo(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y[start_idx:], dtype=np.int64)
+            labels = np.asarray(dataset.y[start_idx:], dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 
@@ -157,7 +162,7 @@ class RunDynFo(BaseModel):
                     f"Expected logits to be 2D for multi-class classification, got {logits.shape}."
                 )
 
-            is_logit = False  # DynFo model returns probabilities
+            is_logit = False  # DynFo outputs probability scores, not raw logits
 
             return {
                 "labels": labels,

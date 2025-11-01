@@ -10,7 +10,7 @@ import time
 from typing import Any
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 from .orf3v import ORF3V
@@ -63,7 +63,6 @@ class RunORF3V(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, Any]:
@@ -74,8 +73,6 @@ class RunORF3V(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset object with `.load_data()` and `.load_mask()`.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
             Hyperparameters for DynDo model.
         seed : int, default=42
@@ -90,6 +87,12 @@ class RunORF3V(BaseModel):
             - logits: Model output logits or probabilities.
             - time_taken: Time taken for full dataset pass.
             - is_logit: Indicates whether scores are logits (True) or probabilities (False).
+
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task ---
         if dataset.task not in self.tasks:
@@ -98,12 +101,7 @@ class RunORF3V(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
 
-        mask_params = mask_params or {}
         model_params = model_params or {}
-
-        # --- Load data ---
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
 
         if dataset.task == "regression":
             raise NotImplementedError("Regression task not supported for OLVF.")
@@ -117,8 +115,15 @@ class RunORF3V(BaseModel):
             initial_buffer = 0 if initial_buffer is None else initial_buffer
             start_idx = 1 if not initial_buffer else initial_buffer
 
+            init_data = dataset[:start_idx]
+            if isinstance(init_data, list):
+                x, mask, y = zip(*init_data)
+                x, mask, y = map(np.asarray, (x, mask, y))
+            else:
+                x, mask, y = init_data
+
             seed_everything(seed)
-            model: ORF3V = ORF3V(x[:start_idx], mask[:start_idx], y[:start_idx],
+            model: ORF3V = ORF3V(x, mask, y,
                                  **model_params, numClasses=dataset.num_classes)
 
             pred_list: list[int | float] = []
@@ -127,13 +132,12 @@ class RunORF3V(BaseModel):
             # --- Train model ---
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(start_idx, dataset.n_samples),
-                total=dataset.n_samples - initial_buffer,
+            for x, mask, y in tqdm(
+                dataset[start_idx:],
+                total=dataset.n_samples - start_idx,
                 desc="Running ORF3V",
             ):
-                xi, mi, yi = x[i], mask[i], y[i]
-                pred, logit = model.partial_fit(xi, mi, int(yi))
+                pred, logit = model.partial_fit(x, mask, int(y))
                 pred_list.append(pred)
                 logit_list.append(logit)
 
@@ -141,7 +145,7 @@ class RunORF3V(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y[start_idx:], dtype=np.int64)
+            labels = np.asarray(dataset.y[start_idx:], dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 

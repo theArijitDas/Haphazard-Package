@@ -6,7 +6,7 @@ import random,time
 import copy,random
 from haphazard.utils import seed_everything
 from sklearn import preprocessing
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import math
 
 # np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)  # Depricated

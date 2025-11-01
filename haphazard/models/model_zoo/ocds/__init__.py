@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .ocds import OCDS
 from ...base_model import BaseModel, BaseDataset
@@ -49,20 +49,20 @@ class MultiClassWrapper:
 
     def partial_fit(
         self,
-        X: NDArray[np.float64],
+        x: NDArray[np.float64],
         mask: NDArray[np.bool_],
-        Y: NDArray[np.int64],
+        y: NDArray[np.int64],
     ) -> tuple[int, list[float]]:
         """
         Perform a single online update step for one instance.
 
         Parameters
         ----------
-        X : NDArray[np.float64]
+        x : NDArray[np.float64]
             Input feature vector, shape (n_features,).
         mask : NDArray[np.bool_]
             Boolean mask indicationg the available features.
-        Y : NDArray[np.int64]
+        y : NDArray[np.int64]
             Ground-truth label in [0, num_classes).
 
         Returns
@@ -74,8 +74,8 @@ class MultiClassWrapper:
         logits = [0.0 for _ in range(self.num_classes)]
 
         for cls_idx, model in enumerate(self.models):
-            binary_label = 1 if Y == cls_idx else 0
-            _, logit = model.partial_fit(X, mask, binary_label)
+            binary_label = 1 if y == cls_idx else 0
+            _, logit = model.partial_fit(x, mask, binary_label)
             logits[cls_idx] = float(logit)
 
         y_pred = int(np.argmax(logits))
@@ -126,7 +126,6 @@ class RunOCDS(BaseModel):
     def fit(
         self,
         dataset: BaseDataset,
-        mask_params: dict[str, Any] | None = None,
         model_params: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> dict[str, NDArray | float | bool]:
@@ -137,8 +136,6 @@ class RunOCDS(BaseModel):
         ----------
         dataset : BaseDataset
             Dataset on which the model is trained and evaluated.
-        mask_params : dict[str, Any] | None, optional
-            Parameters for dataset mask generation.
         model_params : dict[str, Any] | None, optional
             Parameters for OCDS model initialization.
         seed : int, default=42
@@ -153,6 +150,12 @@ class RunOCDS(BaseModel):
                 - "logits": Model output logits or probabilities.
                 - "time_taken": Time taken for full dataset pass.
                 - "is_logit": Indicates whether scores are logits.
+            
+        Note
+        ----
+        The dataset object now provides normalized, masked samples via __iter__ and __getitem__,
+        enabling online (per-instance) learning without full-batch loading.
+        Slicing and iteration behavior is controlled by BaseDataset.
         """
         # --- Validate task type ---
         if dataset.task not in self.tasks:
@@ -161,12 +164,7 @@ class RunOCDS(BaseModel):
                 f"Supported task(s): {self.tasks}"
             )
 
-        mask_params = mask_params or {}
         model_params = model_params or {}
-
-        # Load data
-        x, y = dataset.load_data()
-        mask = dataset.load_mask(**mask_params)
 
         # Set random seed
         seed_everything(seed)
@@ -192,16 +190,13 @@ class RunOCDS(BaseModel):
 
             start_time = time.perf_counter()
 
-            for i in tqdm(
-                range(dataset.n_samples),
+            for x, mask, y in tqdm(
+                dataset,
                 total=dataset.n_samples,
                 desc="Running OCDS",
             ):
-                xi = x[i]
-                mi = mask[i]
-                yi = y[i]
 
-                pred, logit = model.partial_fit(xi, mi, yi)
+                pred, logit = model.partial_fit(x, mask, y)
                 pred_list.append(pred)
                 logit_list.append(logit)
 
@@ -209,7 +204,7 @@ class RunOCDS(BaseModel):
             time_taken = end_time - start_time
 
             # --- Final formatting ---
-            labels = np.asarray(y, dtype=np.int64)
+            labels = np.asarray(dataset.y, dtype=np.int64)
             preds = np.asarray(pred_list, dtype=np.int64)
             logits = np.asarray(logit_list, dtype=np.float64)
 

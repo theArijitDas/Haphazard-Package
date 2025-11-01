@@ -9,7 +9,7 @@ directory and provides a convenient `load_model` interface.
 
 import importlib
 import pkgutil
-from typing import Type, Dict, Any, Callable
+from typing import Type, Any, Callable
 
 from ..base_model import BaseModel
 
@@ -17,7 +17,7 @@ from ..base_model import BaseModel
 # -------------------------------------------------------------------------
 # Model registry
 # -------------------------------------------------------------------------
-_MODEL_REGISTRY: Dict[str, Type[BaseModel]] = {}
+_MODEL_REGISTRY: dict[str, Type[BaseModel]] = {}
 
 
 def register_model(name: str) -> Callable[[Type[BaseModel]], Type[BaseModel]]:
