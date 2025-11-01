@@ -3,18 +3,19 @@ haphazard.data.base_dataset
 ---------------------------
 Abstract base class for datasets.
 
-All datasets must inherit from `BaseDataset` and 
-implement both `__init__()` and `read_data()` methods.
+All dataset implementations must inherit from `BaseDataset`.
+Subclasses must implement read_data() and call super().__init__() from their constructor.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Literal, Callable
 from functools import wraps
+from typing import Any, Literal, Callable
 
 import numpy as np
 from numpy.typing import NDArray
 
 from .mask import create_mask, MaskScheme
+from ..normalization import load_normalizer
 
 
 # -------------------------------------------------------------------------
@@ -45,8 +46,8 @@ def validate_read_data_outputs(
     """
 
     @wraps(func)
-    def wrapper(self, base_path: str = "./") -> tuple[NDArray, NDArray]:
-        output = func(self, base_path)
+    def wrapper(self, *args: Any, **kwargs: Any) -> tuple[NDArray, NDArray]:
+        output = func(self, *args, **kwargs)
 
         # Validate that output is a tuple of length 2
         if not isinstance(output, tuple):
@@ -102,7 +103,8 @@ class BaseDataset(ABC):
     Notes
     -----
     - All dataset implementations must inherit from this class.
-    - Derived classes must implement `__init__()` and `read_data()` methods.
+    - Derived classes must implement `read_data()` method 
+    and call super().__init__() from their constructor.
     """
 
     # --- Required metadata fields ---
@@ -114,8 +116,13 @@ class BaseDataset(ABC):
     num_classes: int | None
 
     # -------------------------------------------------------------------------
-    @abstractmethod
-    def __init__(self, base_path: str = "./", **kwargs: Any) -> None:
+    def __init__(self, base_path: str = "./", 
+                 scheme: MaskScheme|None = None,
+                 availability_prob: float = 0.5,
+                 num_chunks: int = 5,
+                 mask_seed: int = 42,
+                 norm: str = "none",
+                 **kwargs: Any) -> None:
         """
         Initialize the dataset and load data from disk.
 
@@ -130,15 +137,8 @@ class BaseDataset(ABC):
         -----
         The initializer must accept `base_path` and arbitrary `**kwargs`.
         """
-        self.x, self.y = self.read_data(base_path=base_path)
 
-        # Dynamically assign attributes
-        self.n_samples, self.n_features = self.x.shape
-        if self.task == "regression":
-            self.num_classes = None
-        elif not getattr(self, "num_classes", None):
-            self.num_classes = len(np.unique(self.y))
-
+        # Check required attributes
         required_attrs = ["name", "task", "haphazard_type"]
         for attr in required_attrs:
             if not hasattr(self, attr):
@@ -146,6 +146,35 @@ class BaseDataset(ABC):
                     f"{self.__class__.__name__} must define attribute '{attr}' "
                     "before calling super().__init__()."
                 )
+        
+        # Load the data, mask and normalizer
+        self.x: NDArray[np.float64]
+        self.y: NDArray[np.float64]
+        self.mask: NDArray[np.bool_]
+
+        if scheme is None:
+            scheme = self.haphazard_type if self.haphazard_type=="intrinsic" else "probabilistic"
+
+        self.x, self.y = self.read_data(base_path=base_path)
+        self.mask = self._load_mask(scheme, 
+                                    availability_prob = availability_prob, 
+                                    num_chunks = num_chunks, 
+                                    seed = mask_seed)
+        
+        # Sanity check
+        if not (len(self.x) == len(self.y) == len(self.mask)):
+            raise ValueError(
+                f"Inconsistent lengths: x={len(self.x)}, y={len(self.y)}, mask={len(self.mask)}"
+            )
+        
+        # Dynamically assign attributes
+        self.n_samples, self.n_features = self.x.shape
+        if self.task == "regression":
+            self.num_classes = None
+        elif not getattr(self, "num_classes", None):
+            self.num_classes = len(np.unique(self.y))
+
+        self.normalize = load_normalizer(norm, num_features=self.n_features)
 
     # -------------------------------------------------------------------------
     @abstractmethod
@@ -174,7 +203,7 @@ class BaseDataset(ABC):
         raise NotImplementedError("Subclasses must implement `read_data` method.")
 
     # -------------------------------------------------------------------------
-    def load_mask(
+    def _load_mask(
         self,
         scheme: MaskScheme,
         *,
@@ -213,19 +242,32 @@ class BaseDataset(ABC):
             num_chunks=num_chunks,
             seed=seed,
         )
+
         return mask
+    
+    # -------------------------------------------------------------------------
+    def __len__(self) -> int:
+        """Return number of samples in the dataset."""
+        return self.n_samples
+    
+    # -------------------------------------------------------------------------
+    def __getitem__(self, i):
+        """Return normalized (x, y, mask) tuple or list of tuples for given index or slice."""
+        if isinstance(i, slice):
+            indices = range(*i.indices(len(self.x)))
+            result = []
+            for idx in indices:
+                result.append((self.normalize(self.x[idx], self.mask[idx]), self.mask[idx], self.y[idx]))
+            return result
+        else:
+            print("process")
+            return self.normalize(self.x[i], self.mask[i]), self.mask[i], self.y[i]
 
     # -------------------------------------------------------------------------
-    def load_data(self) -> tuple[NDArray, NDArray]:
-        """
-        Return the dataset's feature array and labels/targets array.
-
-        Returns
-        -------
-        tuple[NDArray, NDArray]
-            Tuple containing `(x, y)` already loaded in memory.
-        """
-        return self.x, self.y
+    def __iter__(self):
+        """Iterate over samples, returning normalized features, target, and mask."""
+        for x, y, mask in zip(self.x, self.y, self.mask):
+            yield self.normalize(x, mask), mask, y
 
     # -------------------------------------------------------------------------
     def __repr__(self) -> str:

@@ -11,7 +11,7 @@ import importlib
 import pkgutil
 from typing import Type, Dict, Any, Callable
 
-from ..base_dataset import BaseDataset
+from ..base_dataset import BaseDataset, MaskScheme
 
 
 # -------------------------------------------------------------------------
@@ -77,7 +77,16 @@ for module_info in pkgutil.iter_modules(__path__, prefix=f"{_package_name}."):
 # -------------------------------------------------------------------------
 # Public loader
 # -------------------------------------------------------------------------
-def load_dataset(name: str, base_path: str = "./", **kwargs: Any) -> BaseDataset:
+def load_dataset(
+    name: str,
+    base_path: str = "./",
+    scheme: MaskScheme | None = None,
+    availability_prob: float = 0.5,
+    num_chunks: int = 5,
+    mask_seed: int = 42,
+    norm: str = "none",
+    **kwargs: Any,
+) -> BaseDataset:
     """
     Load a dataset by name.
 
@@ -87,18 +96,18 @@ def load_dataset(name: str, base_path: str = "./", **kwargs: Any) -> BaseDataset
         Name of the dataset to load.
     base_path : str, default="./"
         Path to the directory containing the raw data.
+    scheme : MaskScheme | None, default=None
+        Masking scheme ("intrinsic", "probabilistic", etc.).
+    availability_prob : float, default=0.5
+        Probability of feature availability for probabilistic masking.
+    num_chunks : int, default=5
+        Number of chunks for chunk-based mask schemes.
+    mask_seed : int, default=42
+        Random seed for mask generation.
+    norm : str, default="none"
+        Normalization method to apply ("none", "zscore", etc.).
     **kwargs : Any
         Additional arguments passed to the dataset constructor.
-
-    Returns
-    -------
-    BaseDataset
-        An instance of the requested dataset.
-
-    Raises
-    ------
-    ValueError
-        If the specified dataset name is not found in the registry.
     """
     key = name.lower()
     if key not in _DATASET_REGISTRY:
@@ -106,8 +115,17 @@ def load_dataset(name: str, base_path: str = "./", **kwargs: Any) -> BaseDataset
             f"Unknown dataset '{name}'. "
             f"Available datasets: {list(_DATASET_REGISTRY.keys())}"
         )
+
     dataset_cls = _DATASET_REGISTRY[key]
-    return dataset_cls(base_path, **kwargs)
+    return dataset_cls(
+        base_path=base_path,
+        scheme=scheme,
+        availability_prob=availability_prob,
+        num_chunks=num_chunks,
+        mask_seed=mask_seed,
+        norm=norm,
+        **kwargs,
+    )
 
 
 # -------------------------------------------------------------------------
