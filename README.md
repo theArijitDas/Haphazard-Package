@@ -262,6 +262,11 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.1.1
+
+* Added model **HapTransformer**
+* Update `__repr__` of `base_dataset` 
+
 ### v1.1.0
 
 **Major Features**
