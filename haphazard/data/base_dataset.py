@@ -174,7 +174,8 @@ class BaseDataset(ABC):
         elif not getattr(self, "num_classes", None):
             self.num_classes = len(np.unique(self.y))
 
-        self.normalize = load_normalizer(norm, num_features=self.n_features)
+        self.norm = norm
+        self.normalize = load_normalizer(norm, num_features=self.n_features, replace_with=kwargs.get('replace_with', 'nan'))
 
     # -------------------------------------------------------------------------
     @abstractmethod
@@ -288,5 +289,6 @@ class BaseDataset(ABC):
             f"samples={self.n_samples}, "
             f"features={self.n_features}, "
             f"num_classes={self.num_classes}, "
-            f"data={data_status})"
+            f"data={data_status}, "
+            f"norm={self.norm})"
         )
