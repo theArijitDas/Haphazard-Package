@@ -262,6 +262,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.1.2
+* Add model **HI2**
+
 ### v1.1.1
 
 * Added model **HapTransformer**
