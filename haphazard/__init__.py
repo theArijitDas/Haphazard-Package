@@ -5,7 +5,7 @@ Top-level imports for main API access.
 """
 
 # Package version
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 # User-facing APIs
 from .data import load_dataset
