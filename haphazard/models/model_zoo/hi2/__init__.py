@@ -45,7 +45,7 @@ class RunHI2(BaseModel):
         """
         self.name = "HI2"
         self.tasks = {"classification"}
-        self.deterministic = True
+        self.deterministic = False
         self.hyperparameters = {
             "plot_type",
             "model_name",
