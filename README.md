@@ -262,6 +262,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.1.4
+* Added model **V2F**
+
 ### v1.1.3
 * Bug fix: **HI2** is not deterministic.
 * Set `self.determinitic` = `False` in **HI2** module.
