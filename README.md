@@ -262,6 +262,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+###  v1.1.5
+* Bug fix: Squeezed output logit of **V2F** for criterion compatibility
+
 ### v1.1.4
 * Added model **V2F**
 
