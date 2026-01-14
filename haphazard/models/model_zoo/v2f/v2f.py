@@ -23,8 +23,10 @@ class V2F:
         
         self.num_classes = num_classes
         
-        self.embed = Embedding(embedding_size = embedding_size,
-                 init_features = n_features)
+        self.embed = Embedding(
+            embedding_size = embedding_size, 
+            init_features = n_features
+            )
 
         self.aggregate = Aggregation(mode = aggregation_mode)
 
@@ -51,6 +53,7 @@ class V2F:
         instance_embedding = self.aggregate(feature_embeddings)
 
         logit = self.head(instance_embedding)
+        logit = torch.squeeze(logit)
 
         y = y.long() if self.num_classes > 2 else y.float()
         loss = self.criterion(logit, y)
