@@ -4,11 +4,11 @@ import torch
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from torch.optim import AdamW
 
-from .Utils.utils import Embedding, Aggregation, LSTMModel
+from .Utils.utils import Embedding, Aggregation, TaskHead
 
 
 AggregationType = Literal["max", "min", "max_magnitude", "min_magnitude", "mean", "sum"]
-HeadType = Literal["lstm"]
+HeadType = Literal["lstm", "transformer", "mlp", "odl"]
 
 class V2F:
     def __init__(self,
@@ -30,15 +30,13 @@ class V2F:
 
         self.aggregate = Aggregation(mode = aggregation_mode)
 
-        if head == "lstm":
-            self.head = LSTMModel(
-                input_size = embedding_size, 
-                output_size = num_classes if num_classes > 2 else 1, 
-                hidden_size = kwargs.get("hidden_size", 32), 
-                num_layers = kwargs.get("num_layers", 1)
-                )
+        self.head = TaskHead(head_name = head, 
+                             input_size = embedding_size, 
+                             output_size = num_classes if num_classes > 2 else 1, 
+                             **kwargs)
 
-        self.criterion = CrossEntropyLoss() if num_classes > 2 else BCEWithLogitsLoss()
+        self.criterion = BCEWithLogitsLoss() if num_classes <= 2 else CrossEntropyLoss()
+        self.criterion_per_layer = BCEWithLogitsLoss(reduction='none') if num_classes <= 2 else CrossEntropyLoss(reduction='none')
 
         parameters = list(self.embed.parameters()) + list(self.aggregate.parameters()) + list(self.head.parameters())
         self.optimizer = AdamW(parameters, lr=lr)
@@ -48,19 +46,29 @@ class V2F:
         x = torch.tensor(x, dtype=torch.float32)
         mask = torch.tensor(mask, dtype=torch.bool)
         y = torch.tensor(y)
+        y = y.long() if self.num_classes > 2 else y.float()
         
         feature_embeddings = self.embed(x, mask)
         instance_embedding = self.aggregate(feature_embeddings)
 
-        logit = self.head(instance_embedding)
-        logit = torch.squeeze(logit)
+        if self.head.name == 'odl':
+            logit, hidden_outputs = self.head(instance_embedding)
+            logit = logit.detach()
+            losses_per_layer = self.criterion_per_layer(hidden_outputs, y.expand_as(hidden_outputs)).squeeze()  # (num_layers,)
+            loss = torch.sum(losses_per_layer * self.head.model.alpha)
+        
+        else:
+            logit = self.head(instance_embedding)
+            logit = torch.squeeze(logit)
 
-        y = y.long() if self.num_classes > 2 else y.float()
-        loss = self.criterion(logit, y)
+            loss = self.criterion(logit, y)
         
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        if self.head.name == 'odl':
+            self.head.model.update_alpha(losses_per_layer.detach())
 
         with torch.no_grad():
             if self.num_classes == 2:
