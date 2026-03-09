@@ -262,6 +262,10 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.1.6
+* Add task heads to V2F: Transformer, MLP, ODL
+* Available task heads for V2F: LSTM, Transformer, MLP, ODL
+
 ###  v1.1.5
 * Bug fix: Squeezed output logit of **V2F** for criterion compatibility
 
