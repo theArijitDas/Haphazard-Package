@@ -262,11 +262,14 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
-### v1.1.7
+### v1.1.8
 * Hardened seeding implementation in `haphazard/utils/seeding.py`.
 * Immplemented optional imports in HI2 model.
 * Update string regresentation of `BaseDataset` and `BaseModel`.
 * Strict data-typing of x, y and mask in `DummyModel`.
+
+### v1.1.7
+* Bug-fix: Resolve `dtype` of `y` in `v2f.py` for different criterion.
 
 ### v1.1.6
 * Add task heads to V2F: Transformer, MLP, ODL
