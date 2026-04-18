@@ -149,7 +149,7 @@ class BaseDataset(ABC):
         
         # Load the data, mask and normalizer
         self.x: NDArray[np.float64]
-        self.y: NDArray[np.float64]
+        self.y: NDArray[np.float64|np.int64]
         self.mask: NDArray[np.bool_]
 
         if scheme is None:
@@ -283,12 +283,13 @@ class BaseDataset(ABC):
         data_status = "loaded" if hasattr(self, "x") and self.x is not None else "unloaded"
         return (
             f"{self.__class__.__name__}("
-            f"name='{self.name}', "
-            f"task='{self.task}', "
-            f"haphazard_type='{self.haphazard_type}', "
-            f"samples={self.n_samples}, "
-            f"features={self.n_features}, "
-            f"num_classes={self.num_classes}, "
-            f"data={data_status}, "
-            f"norm={self.norm})"
+            f"\n\tname='{self.name}', "
+            f"\n\ttask='{self.task}', "
+            f"\n\thaphazard_type='{self.haphazard_type}', "
+            f"\n\tsamples={self.n_samples}, "
+            f"\n\tfeatures={self.n_features}, "
+            f"\n\tnum_classes={self.num_classes}, "
+            f"\n\tdata={data_status}, "
+            f"\n\tnorm={self.norm}"
+            f"\n)"
         )

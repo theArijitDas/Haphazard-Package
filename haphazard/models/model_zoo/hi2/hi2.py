@@ -4,12 +4,8 @@ from typing import Literal, cast
 
 import numpy as np 
 import torch 
-import torchvision
-import timm 
 import torch.optim as optim 
 import torch.nn as nn 
-
-from .Utils import utils
 
 
 PlotType = Literal["pie_min_max", "bar_z_score", "bar_nan_mark_z_score", "bar_min_max"]
@@ -34,6 +30,26 @@ class HI2:
             spacing: float=0.3,
             device: str|None = None,
         ):
+
+        # Optional dependencies for vision features
+        try:
+            from PIL import Image          # type: ignore
+            import matplotlib.pyplot as plt  # type: ignore
+            import torchvision             # type: ignore
+            import timm                    # type: ignore
+            from .Utils import utils
+        except ImportError as e:
+            raise ImportError(
+                "The following packages are required for vision features but one or more "
+                "are not installed: Pillow, matplotlib, torchvision, timm\n\n"
+                "To install them, run:\n\n"
+                "    pip install haphazard[hi2]\n\n"
+                "    or\n\n"
+                "    pip install Pillow matplotlib torchvision timm\n\n"
+                "Note: 'torchvision' and 'timm' require PyTorch. Visit\n"
+                "https://pytorch.org/get-started/locally/ for the correct install command\n"
+                "for your OS, Python version, and CUDA version."
+            ) from e
         
         out_size = 1 if n_class == 2 else n_class
 

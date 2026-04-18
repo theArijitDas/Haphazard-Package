@@ -237,8 +237,9 @@ class BaseModel(ABC):
         """Return a concise string representation of the model."""
         return (
             f"{self.__class__.__name__}("
-            f"name='{self.name}', "
-            f"tasks={self.tasks}, "
-            f"deterministic={self.deterministic}, "
-            f"hyperparameters={self.hyperparameters})"
+            f"\n\tname='{self.name}', "
+            f"\n\ttasks={self.tasks}, "
+            f"\n\tdeterministic={self.deterministic}, "
+            f"\n\thyperparameters={self.hyperparameters}"
+            f"\n)"
         )

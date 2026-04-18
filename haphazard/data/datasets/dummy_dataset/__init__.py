@@ -71,12 +71,12 @@ class DummyDataset(BaseDataset):
             Feature matrix `x` of shape (n_samples, n_features)
             and target vector `y` of shape (n_samples,).
         """
-        x = np.random.random((self._n_samples, self._n_features))
+        x = np.random.random((self._n_samples, self._n_features)).astype(np.float64)
 
         if self.task == "classification":
-            y = np.random.randint(0, self.num_classes, size=self._n_samples)
+            y = np.random.randint(0, self.num_classes, size=self._n_samples, dtype=np.int64)
         else:
-            y = np.random.random((self._n_samples,))
+            y = np.random.random((self._n_samples)).astype(np.float64)
 
         return x, y
 
