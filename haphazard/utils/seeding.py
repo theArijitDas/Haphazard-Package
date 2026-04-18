@@ -71,6 +71,18 @@ def seed_everything(seed: int, deterministic_torch: bool = False) -> None:
     >>> seed_everything(42)
     >>> seed_everything(42, deterministic_torch=True)
     """
+
+    # Resolve seed from environment if not explicitly provided
+    if seed is None:
+        env_seed = os.environ.get('PYTHONHASHSEED')
+        if env_seed is None:
+            raise ValueError(
+                "No seed provided and PYTHONHASHSEED environment variable "
+                "is not set. Provide a seed explicitly or set the environment "
+                "variable."
+            )
+        seed = int(env_seed)
+
     global _ACTIVE_SEED
 
     # --- Input validation ---
