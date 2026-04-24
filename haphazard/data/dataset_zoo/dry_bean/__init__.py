@@ -1,6 +1,6 @@
 """
-haphazard.data.datasets.dry_bean
---------------------------------
+haphazard.data.dataset_zoo.dry_bean
+-----------------------------------
 Dry Bean dataset implementation for multi-class classification.
 """
 
@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from scipy.io import arff
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
+from ...dataset_zoo import register_dataset
 from ....utils.file_utils import find_file
 
 
@@ -97,7 +97,7 @@ class DryBean(BaseDataset):
         }
         df["Class"] = df["Class"].map(class_encoding)
 
-        # Shuffle rows for randomized experiments
+        # Shuffle rows to randomize label order
         df = df.sample(frac=1.0, random_state=42)
 
         x = df.drop(columns=["Class"]).to_numpy(dtype=np.float64)

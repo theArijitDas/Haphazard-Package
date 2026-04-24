@@ -1,25 +1,22 @@
 """
-haphazard.data.datasets.imdb
-----------------------------
-imdb dataset implementation for binary classification.
+haphazard.data.dataset_zoo.ionosphere
+-------------------------------------
+Ionosphere dataset implementation for binary classification.
 """
-
-import warnings
-import pickle
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
-from ....utils import find_file, seed_everything
+from ...dataset_zoo import register_dataset
+from ....utils import find_file
 
 
-@register_dataset("imdb")
-class IMDB(BaseDataset):
+@register_dataset("ionosphere")
+class Ionosphere(BaseDataset):
     """
-    imdb dataset for binary classification.
+    Ionosphere dataset for binary classification.
 
     Attributes
     ----------
@@ -31,16 +28,11 @@ class IMDB(BaseDataset):
         Task type, e.g., "classification".
     num_classes : int
         Number of unique output classes.
-    
-    Notes:
-        - Missing features are represented as -1 in the raw data and converted to np.nan.
-        - The original dataset has ordered labels (first 12500 '1', rest '0').
-        - Data is shuffled to avoid bias during online training.
     """
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        Initialize the imdb dataset instance.
+        Initialize the ionosphere dataset instance.
 
         Parameters
         ----------
@@ -49,8 +41,8 @@ class IMDB(BaseDataset):
         **kwargs
             Additional keyword arguments passed to the parent constructor.
         """
-        self.name = "imdb"
-        self.haphazard_type = "intrinsic"
+        self.name = "ionosphere"
+        self.haphazard_type = "controlled"
         self.task = "classification"
         self.num_classes = 2
 
@@ -58,7 +50,7 @@ class IMDB(BaseDataset):
 
     def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load and process the imdb dataset.
+        Load and process the ionosphere dataset.
 
         Parameters
         ----------
@@ -73,27 +65,17 @@ class IMDB(BaseDataset):
             y : ndarray of shape (n_samples,)
                 Binary label vector (0 or 1) with dtype int64.
         """
-        data_path = find_file(base_path, "imdb/imdb")
+        data_path: str = find_file(base_path, "ionosphere.data")
+        df =  pd.read_csv(data_path, sep = "," , header = None, engine = 'python')
+        label = np.array(df[34] == "g")*1
+        df = df.iloc[:,:34]
+        df.insert(0, column="class", value=label)
+        data = df.sample(frac = 1, random_state=42)
 
-        # File is saved using older version of numpy. May raise DeprecationWarning
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with open(data_path, "rb") as handle:
-                data = pickle.load(handle)
-
-        data = data.astype(float)
-        data[data == -1] = np.nan  # Substitute -1 with nan value
-
-        # Random shuffling of dataset
-        seed_everything(42)
-        np.random.shuffle(data)
-
-        # Rating <7 is negative and >=7 is positive
-        label = (data[:, 0] >= 7).astype(np.int64)
-        x = data[:, 1:]
-        y = label
+        x = data.iloc[:,1:].to_numpy(dtype=np.float64)
+        y = data.iloc[:,:1].to_numpy(dtype=np.int64).ravel()
 
         return x, y
 
 
-__all__ = ["IMDB"]
+__all__ = ["Ionosphere"]

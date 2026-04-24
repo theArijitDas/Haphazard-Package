@@ -10,7 +10,7 @@ This subpackage provides:
 """
 
 from .base_dataset import BaseDataset, TaskType, HaphazardType
-from .datasets import load_dataset, _DATASET_REGISTRY, register_dataset
+from .dataset_zoo import load_dataset, _DATASET_REGISTRY, register_dataset
 
 
 # -------------------------------------------------------------------------

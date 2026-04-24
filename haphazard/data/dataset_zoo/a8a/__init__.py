@@ -1,7 +1,7 @@
 """
-haphazard.data.datasets.a8a
----------------------------
-A8a dataset implementation for binary classification.
+haphazard.data.dataset_zoo.a8a
+------------------------------
+A8A dataset implementation for binary classification.
 """
 
 import numpy as np
@@ -9,14 +9,14 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
+from ...dataset_zoo import register_dataset
 from ....utils import find_file
 
 
 @register_dataset("a8a")
-class A8a(BaseDataset):
+class A8A(BaseDataset):
     """
-    A8a dataset for binary classification.
+    A8A dataset for binary classification.
 
     Attributes
     ----------
@@ -86,4 +86,4 @@ class A8a(BaseDataset):
         return x, y
 
 
-__all__ = ["A8a"]
+__all__ = ["A8A"]

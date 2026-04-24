@@ -1,6 +1,6 @@
 """
-haphazard.data.datasets.dummy_dataset
--------------------------------------
+haphazard.data.dataset_zoo.dummy_dataset
+----------------------------------------
 Implements a dummy dataset for testing and prototyping.
 """
 
@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset, TaskType
-from ...datasets import register_dataset
+from ...dataset_zoo import register_dataset
 
 
 @register_dataset("dummy")

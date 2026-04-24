@@ -1,7 +1,7 @@
 """
-haphazard.data.datasets.higgs
------------------------------
-higgs dataset implementation for binary classification.
+haphazard.data.dataset_zoo.ipd
+------------------------------
+IPD dataset implementation for binary classification.
 """
 
 import numpy as np
@@ -9,14 +9,14 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
-from ....utils.file_utils import find_file
+from ...dataset_zoo import register_dataset
+from ....utils import find_file
 
 
-@register_dataset("higgs")
-class Higgs(BaseDataset):
+@register_dataset("ipd")
+class IPD(BaseDataset):
     """
-    higgs dataset for binary classification.
+    IPD dataset for binary classification.
 
     Attributes
     ----------
@@ -32,7 +32,7 @@ class Higgs(BaseDataset):
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        Initialize the higgs dataset instance.
+        Initialize the ipd dataset instance.
 
         Parameters
         ----------
@@ -41,7 +41,7 @@ class Higgs(BaseDataset):
         **kwargs
             Additional keyword arguments passed to the parent constructor.
         """
-        self.name = "higgs"
+        self.name = "ipd"
         self.haphazard_type = "controlled"
         self.task = "classification"
         self.num_classes = 2
@@ -50,7 +50,7 @@ class Higgs(BaseDataset):
 
     def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load and process the higgs dataset.
+        Load and process the ipd dataset.
 
         Parameters
         ----------
@@ -65,17 +65,22 @@ class Higgs(BaseDataset):
             y : ndarray of shape (n_samples,)
                 Binary label vector (0 or 1) with dtype int64.
         """
-        try:
-            data_path = find_file(base_path, "HIGGS_1M.csv.gz")
-            df =  pd.read_csv(data_path, compression='gzip')
-        except FileNotFoundError:
-            data_path = find_file(base_path, "HIGGS_1M.csv")
-            df =  pd.read_csv(data_path)
+        data_path_train: str = find_file(base_path, "ItalyPowerDemand_TRAIN.txt")
+        data_path_test: str = find_file(base_path, "ItalyPowerDemand_TEST.txt")
 
-        x = df.iloc[:, 1:].to_numpy(dtype=np.float64)
-        y = (df.iloc[:, 0].to_numpy() == 1.0).astype(np.int64)
+        df_train = pd.read_csv(data_path_train, sep = "  " , header = None, engine = 'python')
+        df_test = pd.read_csv(data_path_test, sep = "  " , header = None, engine = 'python')
+        df = pd.concat([df_train, df_test])
+
+        label = np.array(df[0] == 1)*1
+        df = df.iloc[:,1:]
+        df.insert(0, column="class", value=label)
+        data = df.sample(frac = 1, random_state=42)
+
+        x = data.iloc[:,1:].to_numpy(dtype=np.float64)
+        y = data.iloc[:,:1].to_numpy(dtype=np.int64).ravel()
 
         return x, y
 
 
-__all__ = ["Higgs"]
+__all__ = ["IPD"]

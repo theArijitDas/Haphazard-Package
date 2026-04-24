@@ -1,6 +1,6 @@
 """
-haphazard.data.datasets
------------------------
+haphazard.data.dataset_zoo
+--------------------------
 Dataset registry and dynamic loader.
 
 This module automatically imports all dataset definitions in the current

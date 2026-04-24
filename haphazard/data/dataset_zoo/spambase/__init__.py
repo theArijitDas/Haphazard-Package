@@ -1,7 +1,7 @@
 """
-haphazard.data.datasets.susy
-----------------------------
-susy dataset implementation for binary classification.
+haphazard.data.dataset_zoo.spambase
+-----------------------------------
+Spambase dataset implementation for binary classification.
 """
 
 import numpy as np
@@ -9,14 +9,14 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
-from ....utils.file_utils import find_file
+from ...dataset_zoo import register_dataset
+from ....utils import find_file
 
 
-@register_dataset("susy")
-class Susy(BaseDataset):
+@register_dataset("spambase")
+class Spambase(BaseDataset):
     """
-    susy dataset for binary classification.
+    Spambase dataset for binary classification.
 
     Attributes
     ----------
@@ -32,7 +32,7 @@ class Susy(BaseDataset):
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        Initialize the susy dataset instance.
+        Initialize the spambase dataset instance.
 
         Parameters
         ----------
@@ -41,7 +41,7 @@ class Susy(BaseDataset):
         **kwargs
             Additional keyword arguments passed to the parent constructor.
         """
-        self.name = "susy"
+        self.name = "spambase"
         self.haphazard_type = "controlled"
         self.task = "classification"
         self.num_classes = 2
@@ -50,7 +50,7 @@ class Susy(BaseDataset):
 
     def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load and process the susy dataset.
+        Load and process the spambase dataset.
 
         Parameters
         ----------
@@ -65,17 +65,17 @@ class Susy(BaseDataset):
             y : ndarray of shape (n_samples,)
                 Binary label vector (0 or 1) with dtype int64.
         """
-        try:
-            data_path = find_file(base_path, "SUSY_1M.csv.gz")
-            df =  pd.read_csv(data_path, compression='gzip')
-        except FileNotFoundError:
-            data_path = find_file(base_path, "SUSY_1M.csv")
-            df =  pd.read_csv(data_path)
+        data_path: str = find_file(base_path, "spambase.data")
+        df =  pd.read_csv(data_path, sep = "," , header = None, engine = 'python')
+        label = np.array(df[57] == 1)*1
+        df = df.iloc[:,:57]
+        df.insert(0, column="class", value=label)
+        data = df.sample(frac = 1, random_state=42)
 
-        x = df.iloc[:, 1:].to_numpy(dtype=np.float64)
-        y = (df.iloc[:, 0].to_numpy() == 1.0).astype(np.int64)
+        x = data.iloc[:,1:].to_numpy(dtype=np.float64)
+        y = data.iloc[:,:1].to_numpy(dtype=np.int64).ravel()
 
         return x, y
 
 
-__all__ = ["Susy"]
+__all__ = ["Spambase"]

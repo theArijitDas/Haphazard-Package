@@ -1,21 +1,21 @@
 """
-haphazard.data.datasets.gas
----------------------------
-Gas dataset implementation for multi-class classification.
+haphazard.data.dataset_zoo.gas
+------------------------------
+GAS dataset implementation for multi-class classification.
 """
 
 import numpy as np
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
+from ...dataset_zoo import register_dataset
 from ....utils.file_utils import find_file
 
 
 @register_dataset("gas")
-class Gas(BaseDataset):
+class GAS(BaseDataset):
     """
-    Gas dataset for multi-class classification.
+    GAS dataset for multi-class classification.
 
     Attributes
     ----------
@@ -38,7 +38,7 @@ class Gas(BaseDataset):
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        Initialize the Gas dataset instance.
+        Initialize the GAS dataset instance.
 
         Parameters
         ----------
@@ -56,7 +56,7 @@ class Gas(BaseDataset):
 
     def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load and process the Gas dataset.
+        Load and process the GAS dataset.
 
         Parameters
         ----------
@@ -100,4 +100,4 @@ class Gas(BaseDataset):
         return x, y
 
 
-__all__ = ["Gas"]
+__all__ = ["GAS"]

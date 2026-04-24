@@ -117,7 +117,7 @@ class BaseDataset(ABC):
 
     # -------------------------------------------------------------------------
     def __init__(self, base_path: str = "./", 
-                 scheme: MaskScheme|None = None,
+                 scheme: MaskScheme = "probabilistic",
                  availability_prob: float = 0.5,
                  num_chunks: int = 5,
                  mask_seed: int = 42,
@@ -152,8 +152,8 @@ class BaseDataset(ABC):
         self.y: NDArray[np.float64|np.int64]
         self.mask: NDArray[np.bool_]
 
-        if scheme is None:
-            scheme = self.haphazard_type if self.haphazard_type=="intrinsic" else "probabilistic"
+        if self.haphazard_type=="intrinsic":
+            scheme = "intrinsic"
 
         self.x, self.y = self.read_data(base_path=base_path)
         self.mask = self._load_mask(scheme, 

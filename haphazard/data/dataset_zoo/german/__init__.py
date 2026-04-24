@@ -1,7 +1,7 @@
 """
-haphazard.data.datasets.magic04
--------------------------------
-Magic04 dataset implementation for binary classification.
+haphazard.data.dataset_zoo.german
+---------------------------------
+German dataset implementation for binary classification.
 """
 
 import numpy as np
@@ -9,14 +9,14 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
-from ....utils.file_utils import find_file
+from ...dataset_zoo import register_dataset
+from ....utils import find_file
 
 
-@register_dataset("magic04")
-class Magic04(BaseDataset):
+@register_dataset("german")
+class German(BaseDataset):
     """
-    Magic04 dataset for binary classification.
+    German dataset for binary classification.
 
     Attributes
     ----------
@@ -28,18 +28,11 @@ class Magic04(BaseDataset):
         Task type, e.g., "classification".
     num_classes : int
         Number of unique output classes.
-
-    Notes
-    -----
-    - The raw dataset file contains 10 feature columns and 1 label column.
-    - Labels are strings ('g' or 'h'), converted to integer classes:
-        'g' → 1, 'h' → 0
-    - Data is shuffled for randomized experiments.
     """
 
     def __init__(self, base_path: str = "./", **kwargs) -> None:
         """
-        Initialize the Magic04 dataset instance.
+        Initialize the german dataset instance.
 
         Parameters
         ----------
@@ -48,7 +41,7 @@ class Magic04(BaseDataset):
         **kwargs
             Additional keyword arguments passed to the parent constructor.
         """
-        self.name = "magic04"
+        self.name = "german"
         self.haphazard_type = "controlled"
         self.task = "classification"
         self.num_classes = 2
@@ -57,7 +50,7 @@ class Magic04(BaseDataset):
 
     def read_data(self, base_path: str = ".") -> tuple[NDArray[np.float64], NDArray[np.int64]]:
         """
-        Load and process the Magic04 dataset.
+        Load and process the german dataset.
 
         Parameters
         ----------
@@ -72,17 +65,23 @@ class Magic04(BaseDataset):
             y : ndarray of shape (n_samples,)
                 Binary label vector (0 or 1) with dtype int64.
         """
-        data_path: str = find_file(base_path, "magic04.data")
-        df: pd.DataFrame = pd.read_csv(data_path, sep=",", header=None, engine="python")
+        data_path: str = find_file(base_path, "german.data-numeric")
+        df =  pd.read_csv(data_path, sep = "  " , header = None, engine = 'python')
+        # Remove 41 instances which have label as "nan"
+        df = df.iloc[np.where(df[24].isnull() == False)[0],:]
+        label = np.array(df[24] == 1)*1
+        df = df.iloc[:,:24]
+        df.insert(0, column="class", value=label)
+        # for i in range(df.shape[0]):
+        #     df.iloc[i,3] = int(df.iloc[i,3].split(" ")[1])
+        col_name = df.columns[3]
+        df[col_name] = df[col_name].str.split(" ").str[1].astype(int)
+        data = df.sample(frac = 1, random_state=42)
 
-        # Shuffle rows to randomize label order
-        df = df.sample(frac=1.0, random_state=42)
-
-        # Extract features and labels
-        x = df.iloc[:, :10].to_numpy(dtype=np.float64)
-        y = (df.iloc[:, 10] == "g").astype(np.int64).to_numpy()
+        x = data.iloc[:,1:].to_numpy(dtype=np.float64)
+        y = data.iloc[:,:1].to_numpy(dtype=np.int64).ravel()
 
         return x, y
 
 
-__all__ = ["Magic04"]
+__all__ = ["German"]
