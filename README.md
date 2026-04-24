@@ -262,6 +262,13 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.2.0: `datasets` module changed to `dataset_zoo`
+* Added 15 dataset: WPBC, Ionosphere, WDBC, Australian, WBC, Diabetes-f, Crowdsense(c3), Crowdsense(c5), German, IPD, Svmguide3, KR-vs-KP, Spambase, Spamassasin and Diabetes US.
+* Set default value of mask `scheme` as "probabilistic". For datasets with intrinsic haphazardness `scheme` value is forced to "intrinsic".
+* Minor updates (name and comments) in A8A, GAS, SUSY, HIGGS and Dry Bean datasets.
+* Seed the random shuffle of IMDB dataset appropriately.
+
+
 ### v1.1.8
 * Hardened seeding implementation in `haphazard/utils/seeding.py`.
 * Immplemented optional imports in HI2 model.
