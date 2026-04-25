@@ -33,10 +33,10 @@ class HI2:
 
         # Optional dependencies for vision features
         try:
-            from PIL import Image          # type: ignore
             import matplotlib.pyplot as plt  # type: ignore
             import torchvision             # type: ignore
             import timm                    # type: ignore
+            global utils
             from .Utils import utils
         except ImportError as e:
             raise ImportError(
