@@ -220,13 +220,6 @@ class BaseModel(ABC):
         if model_params is None:
             model_params = self.state_dict
 
-        # Ensure required hyperparameters are provided
-        if self.hyperparameters and not model_params:
-            raise ValueError(
-                f"Model '{self.name}' requires hyperparameters {self.hyperparameters}, "
-                "but none were provided."
-            )
-
         # Store hyperparameters for future calls
         self.state_dict = model_params
 
