@@ -47,8 +47,6 @@ class RunV2F(BaseModel):
         self.tasks = {"classification"}
         self.deterministic = False
         self.hyperparameters = {
-            "n_features",
-            "num_classes",
             "embedding_size",
             "aggregation_mode",
             "lr",

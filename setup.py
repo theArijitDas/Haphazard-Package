@@ -35,8 +35,8 @@ setup(
     ],
     extras_require={
         "orf3v": ["tdigest"],
-        "hi2": ["Pillow", "matplotlib", "torchvision", "timm"],
-        "all": ["tdigest", "Pillow", "matplotlib", "torchvision", "timm"],
+        "hi2": ["matplotlib", "torchvision==0.25", "timm==1.0.26"],
+        "all": ["tdigest", "matplotlib", "torchvision==0.25", "timm==1.0.26"],
     },
     python_requires=">=3.10",
     license="MIT",
