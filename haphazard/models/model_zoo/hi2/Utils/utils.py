@@ -59,7 +59,7 @@ def zscore(row, run_sum, sum_sq, count, epsilon=1e-30):
 # NAN VALUES REPRESENTED AS CROSSES
 # function to produce image tensors corresponding to given normalized data instance. USES MATPLOTLIB AND HENCE IS VERY SLOW. 
 # takes normalized and dropped values, reverse mask, color scheme and dots per inch resolution
-def bar_nan_mark_z_score_plot(values,rev_val,colors,feat,vert=True,dpi=56):
+def bar_nan_plot(values,rev_val,colors,feat,vert=True,dpi=56):
     s=224/dpi                              #s is the size of image in inches. Models require height and width of image to be 224
     fig, _=plt.subplots(figsize=(s,s))     #fix fig as s*s image. When saving with corresponding dpi we get 224*224 image
     fig=plt.bar(feat,values,color=colors)   #represnt the min-max normed features as bars
@@ -120,7 +120,7 @@ def bar_min_max_plot(values, colors, spacing=0.3):# for min max normalized data
     return img
 
 
-def pie_min_max_plot(sizes, colors, max_sectors=1000):# plots pie charts without using matplotlib.
+def pie_plot(sizes, colors, max_sectors=1000):# plots pie charts without using matplotlib.
     sizes=torch.Tensor(sizes)
     colors=torch.Tensor(colors)
     # Filter out NaN values and their corresponding colors
@@ -196,7 +196,7 @@ def pie_min_max_plot(sizes, colors, max_sectors=1000):# plots pie charts without
     return img
 
 # plots values clipped in [-3,3] as bars. Positive values are plotted above x-axis and negative values below x-axis
-def bar_z_score_plot(values, colors, spacing=0.3):
+def bar_plot(values, colors, spacing=0.3):
     # Convert inputs to PyTorch tensors if they're not already
     values = torch.tensor(values)
     colors = torch.tensor(colors, dtype=torch.float32)

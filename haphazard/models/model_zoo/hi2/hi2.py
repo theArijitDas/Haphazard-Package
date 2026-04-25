@@ -8,7 +8,7 @@ import torch.optim as optim
 import torch.nn as nn 
 
 
-PlotType = Literal["pie_min_max", "bar_z_score", "bar_nan_mark_z_score", "bar_min_max"]
+PlotType = Literal["pie", "bar", "bar_nan"]
 VisionModelType = Literal["res34", "vit_small"]
 
 '''
@@ -23,12 +23,13 @@ class HI2:
             self,
             n_class: int,
             n_features: int,
-            plot_type: PlotType="bar_z_score",
+            plot_type: PlotType="bar",
             model_name: VisionModelType="res34",
             lr: float=2e-5,
             vert: bool=True,
             spacing: float=0.3,
             device: str|None = None,
+            norm: str|None = None
         ):
 
         # Optional dependencies for vision features
@@ -57,6 +58,7 @@ class HI2:
         self.plot_type = plot_type
         self.vert = vert
         self.spacing = spacing
+        self.norm = norm
         
         if model_name == 'res34':
             model = torchvision.models.resnet34(weights='IMAGENET1K_V1')
@@ -97,7 +99,7 @@ class HI2:
 
     def __call__(self, x, y, mask):
 
-            row = x
+            row = np.where(mask, x, np.nan)
 
             rev_mask =(1-mask) # reverse mask for plotting nan values in the form of crosses, if needed.
             mat_rev_mask=np.where(rev_mask, 0.5, np.nan) # reverse mask for plotting nan values in the form of crosses, if needed.
@@ -108,19 +110,16 @@ class HI2:
 
 
             # ========== Convert haphazard input to image ==========
-            if(self.plot_type == 'bar_z_score' or self.plot_type == 'bar_nan_mark_z_score'): # bar_z_score and bar_nan_mark_z_score is meant for z-score normalization based bar plots
-                norm_row, self.run_sum, self.sum_sq, self.count = utils.zscore(row, self.run_sum, self.sum_sq, self.count)
-            else:
-                norm_row, self.min_arr, self.max_arr = utils.minmaxnorm(row, self.min_arr, self.max_arr, epsilon=1e-15)    # normalize and update min, max
-
-            if self.plot_type=='bar_nan_mark_z_score':
-                img=utils.bar_nan_mark_z_score_plot(norm_row, rev, self.colors, self.feat, self.vert, dpi=56)        #obtain bar plot tensor 
-            elif self.plot_type== 'bar_min_max':
-                img=utils.bar_min_max_plot(norm_row, self.colors, self.spacing)
-            elif self.plot_type== 'pie_min_max':
-                img=utils.pie_min_max_plot(norm_row, self.colors)
-            elif self.plot_type== 'bar_z_score':
-                img=utils.bar_z_score_plot(norm_row, self.colors)
+            if self.plot_type=='bar_nan':
+                img=utils.bar_nan_plot(row, rev, self.colors, self.feat, self.vert, dpi=56)        #obtain bar plot tensor 
+            elif self.plot_type == 'bar' and self.norm == "minmax":
+                img=utils.bar_min_max_plot(row, self.colors, self.spacing)
+            elif self.plot_type== 'bar':
+                img=utils.bar_plot(row, self.colors)
+            elif self.plot_type== 'pie':
+                row_min = np.nanmin(row)
+                row = row - row_min if row_min < 0 else row  # For pie plot, values must be positive
+                img=utils.pie_plot(row, self.colors)
             else:
                 raise AssertionError(f"Unhandled plot_type: {self.plot_type}") 
 

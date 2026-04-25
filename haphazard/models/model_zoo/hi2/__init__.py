@@ -111,7 +111,7 @@ class RunHI2(BaseModel):
 
             # Set random seed
             seed_everything(seed)
-            model: HI2 = HI2(n_class=dataset.num_classes, n_features=dataset.n_features, **model_params)
+            model: HI2 = HI2(n_class=dataset.num_classes, n_features=dataset.n_features, **model_params, norm=dataset.norm)
 
             pred_list: list[int | float] = []
             logit_list: list[list[float] | float] = []
