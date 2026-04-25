@@ -103,8 +103,7 @@ dataset = load_dataset("dummy", n_samples=100, n_features=10, norm="zscore")
 model = load_model("dummy")
 
 # Run model
-model_params = {}  # Dummy dataset has no hyperparameters
-outputs = model(dataset, model_parameters)
+outputs = model(dataset)
 print(outputs)
 ```
 
@@ -141,14 +140,28 @@ mask = dataset.mask
 
 ### Available Datasets
 
-* Dummy (`"dummy"`)
+* WPBC (`"wpbc"`)
+* Ionosphere (`"ionosphere"`)
+* WDBC (`"wdbc"`)
+* Australian (`"australian"`)
+* WBC (`"wbc"`)
+* Diabetes-f (`"diabetes_f"`)
+* Crowdsense(c3) (`"crowdsense_c3"`)
+* Crowdsense(c5) (`"crowdsense_c5"`)
+* German (`"german"`)
+* IPD (`"ipd"`)
+* Svmguide3 (`"svmguide3"`)
+* KR-vs-KP (`"krvskp"`)
+* Spambase (`"spambase"`)
+* Spamassasin (`"apamassasin"`)
 * Magic04 (`"magic04"`)
-* A8a (`"a8a"`)
 * IMDB (`"imdb"`)
-* Susy (`"susy"`)
-* Higgs (`"higgs"`)
-* DryBean (`"dry_bean"`)
-* Gas (`"gas"`)
+* A8A (`"a8a"`)
+* Diabetes US (`"diabetes_us"`)
+* SUSY (`"susy"`)
+* HIGGS (`"higgs"`)
+* Dry Bean (`dry_bean""`)
+* GAS (`"gas"`)
 
 ---
 
@@ -187,9 +200,9 @@ Introduced in **v1.1.0**, the normalization module provides standardized interfa
 ### Using Built-in Normalizers
 
 ```python
-from haphazard import load_data, load_normalizer
+from haphazard import load_dataset, load_normalizer
 
-dataset = laod_data(
+dataset = laod_dataset(
    "a8a",
    base_path="./",
    scheme="sudden",
@@ -216,9 +229,9 @@ for x, mask, y in zip(X, Mask, Y):
 or 
 
 ```python
-from haphazard import load_data, load_normalizer
+from haphazard import load_dataset, load_normalizer
 
-dataset = laod_data(
+dataset = laod_dataset(
    "a8a",
    base_path="./",
    scheme="sudden",
@@ -261,6 +274,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 ---
 
 ## Versions
+
+### v1.2.1
+* Removed check for passing empty hyperparameter dict from `BaseModel` to support default hyperparameter values.
 
 ### v1.2.0: `datasets` module changed to `dataset_zoo`
 * Added 15 dataset: WPBC, Ionosphere, WDBC, Australian, WBC, Diabetes-f, Crowdsense(c3), Crowdsense(c5), German, IPD, Svmguide3, KR-vs-KP, Spambase, Spamassasin and Diabetes US.
@@ -438,16 +454,16 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Contributing
 
-Haphazard supports easy extensibility for new **datasets**, **models**, and now **normalizers**.
+Haphazard supports easy extensibility for new **datasets**, **models**, and **normalizers**.
 
 ### Adding a new dataset
 
-1. Create a new folder under `haphazard/data/datasets/`, e.g., `my_dataset/`.
+1. Create a new folder under `haphazard/data/dataset_zoo/`, e.g., `my_dataset/`.
 2. Add `__init__.py`:
 
 ```python
 from ...base_dataset import BaseDataset
-from ...datasets import register_dataset
+from ...dataset_zoo import register_dataset
 import numpy as np
 
 @register_dataset("my_dataset")
