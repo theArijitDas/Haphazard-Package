@@ -275,6 +275,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.2.2
+* Debug imports in `HI2` model.
+
 ### v1.2.1
 * Removed check for passing empty hyperparameter dict from `BaseModel` to support default hyperparameter values.
 
