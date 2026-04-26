@@ -26,12 +26,12 @@ setup(
     packages=find_packages(exclude=("tests", "docs")),
     include_package_data=True,
     install_requires=[
-        "numpy",
-        "pandas",
-        "tqdm",
-        "scikit-learn",
-        "torch",
-        "statsmodels",
+        "numpy==2.4.4",
+        "pandas==3.0.2",
+        "scikit-learn==1.8.0",
+        "torch==2.10.0",
+        "tqdm==4.67.3",
+        "statsmodels==0.14.6",
     ],
     extras_require={
         "orf3v": ["tdigest"],
