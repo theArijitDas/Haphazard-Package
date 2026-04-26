@@ -275,6 +275,9 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+## v1.2.4
+* Freeze required package versions.
+
 ## v1.2.3
 * Remove internal normalization from `HI2`.
 * Freeze package versions of torch and tochvision for compatibility.
