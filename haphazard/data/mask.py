@@ -159,6 +159,10 @@ def create_mask(
 
     else:
         raise ValueError(f"Unknown mask scheme: {scheme!r}")
+    
+    # Some datasets, not intrinsically haphazard, (like wpbc, wbc) may have some NaN values in them.
+    # These feature values are treated as missing even in controlled haphazadness setting.
+    mask = mask & ~np.isnan(x)
 
     # Ensure no instance is fully missing
     return check_mask_each_instance(mask)
