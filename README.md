@@ -275,10 +275,13 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
-## v1.2.4
+### v1.2.5
+* Some datasets, not intrinsically haphazard, (like wpbc, wbc) may have some NaN values in them. These feature values are treated as missing even in controlled haphazadness setting.
+
+### v1.2.4
 * Freeze required package versions.
 
-## v1.2.3
+### v1.2.3
 * Remove internal normalization from `HI2`.
 * Freeze package versions of torch and tochvision for compatibility.
 
