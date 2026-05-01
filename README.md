@@ -275,6 +275,11 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.2.6
+* Added models `Aux-Drop` and `Aux-Net`.
+* Suppress `numpy` warning for loading `Crowdsense(c3)`, `Crowdsense(c5)` and `Spamassasin` datasets.
+* Set `OLIFL` as a deterministic model.
+
 ### v1.2.5
 * Some datasets, not intrinsically haphazard, (like wpbc, wbc) may have some NaN values in them. These feature values are treated as missing even in controlled haphazadness setting.
 
