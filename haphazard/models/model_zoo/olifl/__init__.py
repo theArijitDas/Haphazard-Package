@@ -119,7 +119,7 @@ class RunOLIFL(BaseModel):
         """
         self.name = "OLIFL"
         self.tasks = {"classification"}
-        self.deterministic = False
+        self.deterministic = True
         self.hyperparameters = {"C", "option"}
 
         super().__init__(**kwargs)
