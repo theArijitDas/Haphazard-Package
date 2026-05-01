@@ -4,6 +4,8 @@ haphazard.data.dataset_zoo.spamassasin
 Spamassasin dataset implementation for binary classification.
 """
 import pickle
+import warnings
+
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
@@ -66,8 +68,10 @@ class Spamassasin(BaseDataset):
                 Binary label vector (0 or 1) with dtype int64.
         """
         data_path: str = find_file(base_path, "spamassasin.pickle")
-        with open(data_path, 'rb') as handle:
-            data = pickle.load(handle)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning, message='.*numpy.core.numeric.*')
+            with open(data_path, 'rb') as handle:
+                data = pickle.load(handle)
 
         data = data.astype(float)
         # Substitute each position containing -1 with nan value
