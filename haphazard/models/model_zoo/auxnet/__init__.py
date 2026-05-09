@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from .auxnet import AuxNet, prepare_data_imputation
 from ...base_model import BaseModel, BaseDataset

@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from .ocds import OCDS
 from ...base_model import BaseModel, BaseDataset

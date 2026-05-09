@@ -74,13 +74,33 @@ class HI2:
         self.optimizer = optim.Adam(model.parameters(), lr = lr)
 
         if device is None:
-            self.device: str='cuda' if torch.cuda.is_available() else 'cpu'
+            if torch.cuda.is_available():
+                print("'device' passed as 'None' but CUDA is available.")
+                print("Using CUDA...")
+                self.device: str = 'cuda'
+            else:
+                self.device: str = 'cpu'
+
+        elif device == 'gpu' or device[:4] == 'cuda':
+            if torch.cuda.is_available():
+                print("Using CUDA...")
+                self.device: str = 'cuda' if device == 'gpu' else device
+            else:
+                print(f"'device' passed as '{device}' but CUDA is not available.")
+                print("Falling back to CPU...")
+                self.device: str = 'cpu'
+
+        elif device == 'cpu':
+            self.device: str = 'cpu'
+
         else:
-            self.device = device
+            raise ValueError(
+                f"Invalid device '{device}'. Expected one of: None, 'cpu', 'gpu', 'cuda', or 'cuda:<int>' (e.g. 'cuda:0')."
+            )
         
         self.colors = utils.gen_colors(n_features, seed=42)
 
-        model.to(device)
+        model.to(self.device)
         self.model = model
 
         # create lists for storing various data for evaluation and analysis

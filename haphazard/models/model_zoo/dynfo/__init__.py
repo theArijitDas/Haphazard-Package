@@ -10,7 +10,7 @@ import time
 from typing import Any
 
 import numpy as np
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from .dynfo import DynFo
 from ...base_model import BaseModel, BaseDataset

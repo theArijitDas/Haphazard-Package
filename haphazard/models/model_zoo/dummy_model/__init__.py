@@ -8,7 +8,7 @@ from typing import Any
 import time
 
 import numpy as np
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from ...base_model import BaseModel, BaseDataset
 from ...model_zoo import register_model

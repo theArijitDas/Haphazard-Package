@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from .nb3 import NB3
 from ...base_model import BaseModel, BaseDataset
