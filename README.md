@@ -275,6 +275,10 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.2.7
+* Logic update in `HI2` for choosing device ('cpu' or 'gpu') for running model.
+* Use `tqdm` instead of `tqdm.auto`.
+
 ### v1.2.6
 * Added models `Aux-Drop` and `Aux-Net`.
 * Suppress `numpy` warning for loading `Crowdsense(c3)`, `Crowdsense(c5)` and `Spamassasin` datasets.
