@@ -10,19 +10,15 @@ import torch.optim as optim
 
 class AuxDrop_ODL_AuxLayer1stlayer(nn.Module):
     def __init__(self,
-                 n_classes, n_aux_feat, 
+                 n_classes, n_aux_feat, device, 
                  max_num_hidden_layers = 6, 
                  qtd_neuron_per_hidden_layer = 50, 
                  n_neuron_aux_layer = None, 
                  batch_size=1, b=0.99, s=0.2, lr=0.01, 
-                 dropout_p=0.5, use_cuda=False):
+                 dropout_p=0.5):
         super(AuxDrop_ODL_AuxLayer1stlayer, self).__init__()
 
-        if torch.cuda.is_available() and use_cuda:
-            print("Using CUDA :]")
-
-        self.device = torch.device(
-            "cuda:0" if torch.cuda.is_available() and use_cuda else "cpu")
+        self.device = device
 
         self.max_num_hidden_layers = max_num_hidden_layers
         self.qtd_neuron_per_hidden_layer = qtd_neuron_per_hidden_layer
@@ -95,7 +91,7 @@ class AuxDrop_ODL_AuxLayer1stlayer(nn.Module):
 
         criterion = nn.CrossEntropyLoss().to(self.device)
         loss = criterion(real_output.view(self.batch_size, self.n_classes), Y.view(self.batch_size).long())
-        self.loss_array.append(loss.detach().numpy())
+        self.loss_array.append(loss.detach().cpu().numpy())
         if show_loss:
             if (len(self.loss_array) % 1000) == 0:
                 print("WARNING: Set 'show_loss' to 'False' when not debugging. "
@@ -144,16 +140,14 @@ class AuxDrop_ODL_AuxLayer1stlayer(nn.Module):
                 self.alpha[i] = torch.max(
                     self.alpha[i], self.s / (len(losses_per_layer)))
             
-        z_t = torch.sum(self.alpha)
-        self.alpha = Parameter(
-            self.alpha / z_t, requires_grad=False).to(self.device)
+        self.alpha.data = self.alpha.data / torch.sum(self.alpha.data)
         
         # To save the loss
         detached_loss = []
         for i in range(len(losses_per_layer)):
-            detached_loss.append(losses_per_layer[i].detach().numpy())
+            detached_loss.append(losses_per_layer[i].detach().cpu().numpy())
         self.layerwise_loss_array.append(np.asarray(detached_loss))
-        self.alpha_array.append(self.alpha.detach().numpy())
+        self.alpha_array.append(self.alpha.detach().cpu().numpy())
 
     # Forward pass. Get the output from each layer.     
     def forward(self, aux_feat, aux_mask):

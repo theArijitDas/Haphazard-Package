@@ -9,6 +9,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+import torch
 from tqdm import tqdm
 
 from .auxdrop import AuxDrop_ODL_AuxLayer1stlayer as AuxDrop
@@ -54,7 +55,7 @@ class RunAuxDrop(BaseModel):
             "s",
             "lr",
             "dropout_p",
-            "use_cuda",
+            "device",
         }
 
         super().__init__(**kwargs)
@@ -110,10 +111,37 @@ class RunAuxDrop(BaseModel):
                 raise ValueError(
                     f"For classification task, '{dataset.name}.num_classes' cannot be None."
                 )
+            
+            # Configure device
+            device = model_params.pop("device", None)
+            if device is None:
+                if torch.cuda.is_available():
+                    print("'device' passed as 'None' but CUDA is available.")
+                    print("Using CUDA...")
+                    self.device: str = 'cuda'
+                else:
+                    self.device: str = 'cpu'
+
+            elif device == 'gpu' or device[:4] == 'cuda':
+                if torch.cuda.is_available():
+                    print("Using CUDA...")
+                    self.device: str = 'cuda' if device == 'gpu' else device
+                else:
+                    print(f"'device' passed as '{device}' but CUDA is not available.")
+                    print("Falling back to CPU...")
+                    self.device: str = 'cpu'
+
+            elif device == 'cpu':
+                self.device: str = 'cpu'
+
+            else:
+                raise ValueError(
+                    f"Invalid device '{device}'. Expected one of: None, 'cpu', 'gpu', 'cuda', or 'cuda:<int>' (e.g. 'cuda:0')."
+                )
 
             # Set random seed
             seed_everything(seed)
-            model: AuxDrop = AuxDrop(n_classes=dataset.num_classes, n_aux_feat=dataset.n_features, **model_params)
+            model: AuxDrop = AuxDrop(n_classes=dataset.num_classes, n_aux_feat=dataset.n_features, device=device, **model_params)
 
             pred_list: list[int | float] = []
             logit_list: list[list[float] | float] = []

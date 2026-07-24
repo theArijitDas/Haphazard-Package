@@ -45,7 +45,7 @@ def prepare_data_imputation(X_haphazard, mask, imputation_type, n_impute_feat):
 # Torch Model Creation
 class AuxNet(nn.Module):
     
-    def __init__(self, no_of_aux_layers, input_shape, output_shape, 
+    def __init__(self, no_of_aux_layers, input_shape, output_shape, device, 
                  no_of_base_layers=5, no_of_end_layers=5, nodes_in_each_layer=50, 
                  b=0.99, s=0.2, **kwargs):
         super(AuxNet, self).__init__()
@@ -58,6 +58,9 @@ class AuxNet(nn.Module):
         # s - smoothing rate
         # input_shape - Shape of the input to base layer
         # output_shape - Number of possible classes to be classified into
+        # device - Device (CPU or CUDA) to run the model on
+
+        self.device = device
 
         self.beta = b
         self.lamda = s
@@ -68,7 +71,7 @@ class AuxNet(nn.Module):
         self.nodes_in_each_layer = nodes_in_each_layer
         
         self.num_layers = no_of_base_layers + no_of_aux_layers + no_of_end_layers + 1
-        self.layer_weights = torch.tensor([1.0 / self.num_layers for _ in range(self.num_layers)])
+        self.layer_weights = nn.Parameter(torch.full((self.num_layers,), 1.0 / self.num_layers), requires_grad=False)
         # Layer weights = [...base layers... , ...aux layers... ,  ...end layers... ,  middle layer]
         
         # ================================= Base Layers =================================================
@@ -143,7 +146,7 @@ class AuxNet(nn.Module):
         # x = torch.concatenate(aux_out, dim=0)
         
         # preparing input it the end layers
-        end_input = torch.zeros(((self.no_of_aux_layers+1), self.nodes_in_each_layer))
+        end_input = torch.zeros(((self.no_of_aux_layers+1), self.nodes_in_each_layer), device=self.device)
         
         if len(present_features):
             x = torch.concatenate(aux_out, dim=0)
@@ -154,7 +157,7 @@ class AuxNet(nn.Module):
         # taking layer weights of Aux layers and middle layer weights
         gamma = torch.concat([self.layer_weights[self.no_of_base_layers:self.no_of_base_layers+self.no_of_aux_layers],
                               self.layer_weights[-1].view(-1)])
-        gamma_mask = torch.zeros_like(gamma, dtype=torch.float)
+        gamma_mask = torch.zeros_like(gamma, dtype=torch.float, device=self.device)
         gamma_mask[present_features] = 1.0 # Aux layers
         gamma_mask[-1] = 1.0 # Middle layer
         gamma = gamma * gamma_mask
@@ -192,24 +195,26 @@ class AuxNet(nn.Module):
     def update_layer_weights(self, losses, mask):
         with torch.no_grad():
             present_features = np.where(mask)[0]
-            j = 0            
+            j = 0
+
+            layer_weights_data = self.layer_weights.data
             
             # Updating Base Layer Weights
             for i in range(self.no_of_base_layers):
-                self.layer_weights[i] *= torch.pow(self.beta, losses[j])
-                self.layer_weights[i] = max(self.layer_weights[i].item(), self.lamda / self.num_layers)
+                layer_weights_data[i] *= torch.pow(self.beta, losses[j])
+                layer_weights_data[i] = max(layer_weights_data[i].item(), self.lamda / self.num_layers)
                 j+=1
             
             # Updating Aux Layer Weights
             for i in present_features:
-                self.layer_weights[self.no_of_base_layers+i] *= torch.pow(self.beta, losses[j])
-                self.layer_weights[self.no_of_base_layers+i] = max(self.layer_weights[self.no_of_base_layers+i].item(), self.lamda / self.num_layers)
+                layer_weights_data[self.no_of_base_layers+i] *= torch.pow(self.beta, losses[j])
+                layer_weights_data[self.no_of_base_layers+i] = max(layer_weights_data[self.no_of_base_layers+i].item(), self.lamda / self.num_layers)
                 j+=1
             
             # Upadting End and Middle Layer Weights
             for i in range(self.no_of_base_layers+self.no_of_aux_layers, self.num_layers):
-                self.layer_weights[i] *= torch.pow(self.beta, losses[j])
-                self.layer_weights[i] = max(self.layer_weights[i].item(), self.lamda / self.num_layers)
+                layer_weights_data[i] *= torch.pow(self.beta, losses[j])
+                layer_weights_data[i] = max(layer_weights_data[i].item(), self.lamda / self.num_layers)
                 j+=1
                 
-            self.layer_weights = self.layer_weights / torch.sum(self.layer_weights)
+            self.layer_weights.data = layer_weights_data / torch.sum(layer_weights_data)

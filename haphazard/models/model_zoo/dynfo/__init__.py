@@ -113,9 +113,8 @@ class RunDynFo(BaseModel):
                 raise ValueError(f"'{dataset.name}.num_classes' cannot be None for classification task.")
 
             # Get data for initial buffer
-            initial_buffer = model_params.pop("initial_buffer", 0)
-            initial_buffer = 0 if initial_buffer is None else initial_buffer
-            start_idx = 1 if not initial_buffer else initial_buffer
+            initial_buffer = model_params.pop("initial_buffer", None) or 0
+            start_idx = initial_buffer if initial_buffer > 0 else 1
 
             init_data = dataset[:start_idx]
             if isinstance(init_data, list):

@@ -58,6 +58,7 @@ class RunAuxNet(BaseModel):
             "b",
             "s",
             "n_impute_feat",
+            "device",
         }
 
         super().__init__(**kwargs)
@@ -122,10 +123,38 @@ class RunAuxNet(BaseModel):
 
             base_feat_normalizer = load_normalizer(dataset.norm, num_features=n_impute_feat, replace_with=0.0)
 
+            # Configure device
+            device = model_params.pop("device", None)
+            if device is None:
+                if torch.cuda.is_available():
+                    print("'device' passed as 'None' but CUDA is available.")
+                    print("Using CUDA...")
+                    self.device: str = 'cuda'
+                else:
+                    self.device: str = 'cpu'
+
+            elif device == 'gpu' or device[:4] == 'cuda':
+                if torch.cuda.is_available():
+                    print("Using CUDA...")
+                    self.device: str = 'cuda' if device == 'gpu' else device
+                else:
+                    print(f"'device' passed as '{device}' but CUDA is not available.")
+                    print("Falling back to CPU...")
+                    self.device: str = 'cpu'
+
+            elif device == 'cpu':
+                self.device: str = 'cpu'
+
+            else:
+                raise ValueError(
+                    f"Invalid device '{device}'. Expected one of: None, 'cpu', 'gpu', 'cuda', or 'cuda:<int>' (e.g. 'cuda:0')."
+                )
+
             # Set random seed
             seed_everything(seed)
             model: AuxNet = AuxNet(no_of_aux_layers = X.shape[1], input_shape = X_base.shape[1], 
-                                   output_shape = dataset.num_classes, **model_params)
+                                   output_shape = dataset.num_classes, device=self.device, **model_params)
+            model = model.to(self.device)
             
             loss_fn = CrossEntropyLoss()
             optimizer = AdamW(model.parameters(), lr=model_params.get("lr", 0.001))
@@ -133,13 +162,13 @@ class RunAuxNet(BaseModel):
             pred_list: list[int | float] = []
             logit_list: list[list[float] | float] = []
 
-            dataset.x = X
-            dataset.mask = X_mask
+            x_iter = X
+            mask_iter = X_mask
             
             start_time = time.perf_counter()
 
             for i, (x, mask, y) in tqdm(
-                enumerate(dataset),
+                enumerate(zip(x_iter, mask_iter, dataset.y)),
                 total=dataset.n_samples,
                 desc="Running Aux-Net",
             ):
@@ -149,11 +178,11 @@ class RunAuxNet(BaseModel):
                 # Replacing un-observed values with 0.0
                 x[~mask] = 0.0
 
-                output_logit, partial_logits = model(torch.tensor(x, dtype=torch.float32), 
-                                                     torch.tensor(mask, dtype=torch.float32), 
-                                                     torch.tensor(x_base, dtype=torch.float32))
+                output_logit, partial_logits = model(torch.tensor(x, dtype=torch.float32, device=self.device), 
+                                                     torch.tensor(mask, dtype=torch.float32, device=self.device), 
+                                                     torch.tensor(x_base, dtype=torch.float32, device=self.device))
 
-                y_one_hot = torch.zeros((dataset.num_classes), dtype=torch.float32)
+                y_one_hot = torch.zeros((dataset.num_classes), dtype=torch.float32, device=self.device)
                 y_one_hot[y.item()] = 1.0
 
                 losses_per_layer = []

@@ -77,6 +77,9 @@ class Crowdsense_c5(BaseDataset):
         # Substitute each position containing -1 with nan value
         data[data == -1] = np.nan
 
+        # Remove rows that are completely NaN
+        data = data[~np.isnan(data[:, 1:]).all(axis=1)]
+
         # x = data.iloc[:,1:].to_numpy(dtype=np.float64)
         # y = data.iloc[:,:1].to_numpy(dtype=np.int64).ravel()
         
