@@ -38,7 +38,7 @@ setup(
         "hi2": ["matplotlib", "torchvision==0.25", "timm==1.0.26"],
         "all": ["tdigest", "matplotlib", "torchvision==0.25", "timm==1.0.26"],
     },
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     license="MIT",
     classifiers=[
         "Development Status :: 3 - Alpha",
