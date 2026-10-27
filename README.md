@@ -20,11 +20,65 @@ Provides a standardized interface for loading datasets (with online normalizatio
 
 ## Installation
 
-Install via pip (after packaging):
+### Option 1: pip
 
 ```bash
 pip install haphazard
-````
+```
+
+Optional dependencies are available as extras:
+
+```bash
+pip install "haphazard[orf3v]"   # ORF3V model (tdigest)
+pip install "haphazard[hi2]"     # HI2 model (matplotlib, torchvision, timm)
+pip install "haphazard[all]"     # all optional dependencies
+```
+
+> **Note:** `tdigest` (used by ORF3V) compiles a C extension, so it needs a C compiler
+> (`build-essential` on Debian/Ubuntu, Visual C++ Build Tools on Windows).
+> See [v1.0.4](#v104) for details. The Docker image below already includes everything.
+
+### Option 2: Docker
+
+Prebuilt images with all optional dependencies (`haphazard[all]`) are available on
+[Docker Hub](https://hub.docker.com/r/dasarijitjnv/haphazard).
+
+| Tag | Description |
+| --- | ----------- |
+| `latest`, `1.2.9` | Latest release, CPU-only PyTorch (~450 MB) |
+| `1.2.9-cu128` | Latest release, CUDA 12.8 PyTorch (~4 GB) |
+
+> Images are currently built for `linux/amd64` only.
+
+Pull an image:
+
+```bash
+docker pull dasarijitjnv/haphazard:latest
+```
+
+Run it interactively, mounting your current directory (e.g. for dataset files used via `base_path`):
+
+```bash
+docker run --rm -it -v "$(pwd)":/workspace dasarijitjnv/haphazard:latest
+```
+
+Run a script from your mounted directory:
+
+```bash
+docker run --rm -v "$(pwd)":/workspace dasarijitjnv/haphazard:latest python my_script.py
+```
+
+GPU support (requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on the host):
+
+```bash
+docker run --rm -it --gpus all -v "$(pwd)":/workspace dasarijitjnv/haphazard:1.2.9-cu128
+```
+
+Notes:
+
+* The container runs as a non-root user (UID 1000). If files written to the mounted
+  directory have permission issues, add `--user "$(id -u):$(id -g)"` to the `docker run` command.
+* `PYTHONHASHSEED` defaults to `42` for reproducibility. Override it with `-e PYTHONHASHSEED=<seed>`.
 
 ---
 
