@@ -275,6 +275,11 @@ Developers can register their own normalization schemes-see [Contributing](#cont
 
 ## Versions
 
+### v1.2.9
+*  Add two new parameters to the reappearing scheme: 
+    * `num_feature_sets`: partitions the feature space into an arbitrary number of disjoint groups that cycle across sample chunks (generalizing beyond two sets)
+    * `overlap`:  a `False`/float in (0,1) that designates a fraction of random features as permanently visible throughout the stream while the remaining features continue to reappear cyclically.
+
 ### v1.2.8
 * Add code to remove empty rows in `Crowdsense` datasets.
 * Added GPU support for `Aux-Drop` and `Aux-Net`.
