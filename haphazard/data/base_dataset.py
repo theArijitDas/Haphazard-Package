@@ -120,6 +120,8 @@ class BaseDataset(ABC):
                  scheme: MaskScheme = "probabilistic",
                  availability_prob: float = 0.5,
                  num_chunks: int = 5,
+                 num_feature_sets: int = 2,
+                 overlap: bool|float = False,
                  mask_seed: int = 42,
                  norm: str = "none",
                  **kwargs: Any) -> None:
@@ -159,6 +161,8 @@ class BaseDataset(ABC):
         self.mask = self._load_mask(scheme, 
                                     availability_prob = availability_prob, 
                                     num_chunks = num_chunks, 
+                                    num_feature_sets = num_feature_sets,
+                                    overlap = overlap,
                                     seed = mask_seed)
         
         # Sanity check
@@ -208,9 +212,11 @@ class BaseDataset(ABC):
         self,
         scheme: MaskScheme,
         *,
-        availability_prob: float = 0.5,
-        num_chunks: int = 5,
-        seed: int = 42,
+        availability_prob: float,
+        num_chunks: int,
+        num_feature_sets: int,
+        overlap: bool|float,
+        seed: int,
     ) -> NDArray[np.bool_]:
         """
         Validate, create, and return a mask for the dataset.
@@ -241,6 +247,8 @@ class BaseDataset(ABC):
             scheme,
             availability_prob=availability_prob,
             num_chunks=num_chunks,
+            num_feature_sets = num_feature_sets,
+            overlap = overlap,
             seed=seed,
         )
 
