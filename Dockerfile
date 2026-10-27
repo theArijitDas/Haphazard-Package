@@ -35,7 +35,14 @@ RUN pip install --upgrade pip && \
 
 # ── haphazard (pinned version + chosen extras) ────────────────────────────────
 # If HAPHAZARD_VERSION is empty, the latest release is installed.
-RUN pip install "haphazard[${EXTRAS}]${HAPHAZARD_VERSION:+==${HAPHAZARD_VERSION}}"
+# A C compiler is needed only at build time: tdigest -> accumulation-tree has no
+# prebuilt wheel and compiles a Cython extension. Installed and removed in the
+# same layer so it doesn't add to the final image size.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential && \
+    pip install "haphazard[${EXTRAS}]${HAPHAZARD_VERSION:+==${HAPHAZARD_VERSION}}" && \
+    apt-get purge -y --auto-remove build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 USER haphazard
 
